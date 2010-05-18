@@ -47,6 +47,13 @@ var dia = Joint.dia = {
 	return j;
     },
     /**
+     * Returns registered elements of the current paper.
+     * @return {Element[]} Array of registered elements.
+     */
+    registeredElements: function(){
+	return dia._registeredObjects[Joint.paper()];
+    },
+    /**
      * Register object to the current paper.
      * You don't have to use this method unless you really know what you're doing.
      * @param {Element|Joint} obj Object to be registered.
@@ -244,7 +251,7 @@ Element.prototype = {
 	this._opt = {
 	    draggable: true,	// enable dragging?
 	    ghosting: false,		// enable ghosting?
-	    toolbox: false		// enable toolbox?
+	    toolbox: true		// enable toolbox?
 	};
 
 	this.paper = Joint.paper();
@@ -499,24 +506,32 @@ Element.prototype = {
 	self = this,
 	bb = this.wrapper.getBBox(),	// wrapper bounding box
 	tx = bb.x - 10,	// toolbox x position
-	ty = bb.y - 10;	// toolbox y position
+	ty = bb.y - 22;	// toolbox y position
 
 	this.toolbox = [];
-	this.toolbox.push(this.paper.rect(tx, ty, 33, 11, 5).attr({fill: "white"}));
-	// zoom in/out
-	this.toolbox.push(this.paper.image("../mint_icons/icons/search.png", tx, ty, 11, 11));
+	this.toolbox.push(this.paper.rect(tx, ty, 33, 22, 5).attr({fill: "white"}));
+	// zoom in/out (mint icon: search.png)
+	this.toolbox.push(this.paper.image("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAE5SURBVHjaYvz//z8DsQAggFhARGRkpBETE1M/kGkOxIz//v078+HDh4odO3acBPJ//4eaCBBADCA6Kirq4JlzJ978/vPrNwifOHX4fUhIyFmgvDQQs4HUgDBAALFAbTDX1zNiZmFmBfONDM14WFlZdYFMCSD+AsS/QOIAAcQEVcyIw5m8IJNhHIAAAisGufHMuZNfgE74A8Knzx7/LiLO91tfXx9kOgsjEIDUAQQQ2FqQZ3q7Jk6AWs2gqCbOkZDn8l9AiLuNi4vrxfHjx7cC1X8HCCCwYqiv/aBu5NXQ0FD9+/dfr4uf/te7N1/Mu337ttmbN2/uAwQQzIO/gfg11DNsN4BA/LD4n8f33swF8v8DFQoAaS6AAGLEFilQN3JCbQLhH0B8HyCAGHHFIFQDB1QTSNEXgAADAEQ2gYZ9CcycAAAAAElFTkSuQmCC", tx, ty, 11, 11));
 	this.toolbox[this.toolbox.length-1].toFront();
 	Joint.addEvent(this.toolbox[this.toolbox.length-1].node, "mousedown", function(e){
 			   dia.Element.prototype.zoomer.apply(self, [e]);
 		       });
-	// embed
-	this.toolbox.push(this.paper.image("../mint_icons/icons/page_spearmint_up.png", tx + 22, ty, 11, 11));
+	// embed (mint icon: page_spearmint_up.png)
+	this.toolbox.push(this.paper.image("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAEJSURBVHjaYvj//z8DFGOAnz9/rjl27Jg0AwMDExAzAAQQI0ghFPz/8usZjM3ACJTnYBEC0iyfmZmZZYBCXwECiAkm+evXL4bff34w/P33C4z//PvB8O33awYmJiZeoDQ/ELMBBBALSKGJiQkPOzs7AxsbC8OaTXMZWFhZoEb8g5nFDsTMAAHEBFIIZLwCuo/hy5dvDCF+yQx/fv+BuAvhRDAACCCQM0AO5YRJfv78lSE+Ko/h79+/DP8RJoMBQACheHDv4wYGdOAs28DAyMioCmS+AAggJgYSAEAAoZiMUxHUZIAAYkES4AJSQjD3o4HvQPwXIIDgJgMVM4PCEhREWBT/BUUFQIABAMuFbgea+o0EAAAAAElFTkSuQmCC", tx + 22, ty, 11, 11));
 	this.toolbox[this.toolbox.length-1].toFront();
-	this.toolbox[this.toolbox.length-1].node.onclick = function(){ self.embed() };
-	// unembed
-	this.toolbox.push(this.paper.image("../mint_icons/icons/page_spearmint_down.png", tx + 11, ty, 11, 11));
+	this.toolbox[this.toolbox.length-1].node.onclick = function(){ self.embed(); };
+	// unembed (mint icon: page_spearmint_down.png)
+	this.toolbox.push(this.paper.image("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAEJSURBVHjaYvj//z8DFGOAnz9/rjl27Jg0AwMDExAzAAQQI0ghFPz/8usZjM3ACJTnYBEC0iyfmZmZZYBCXwECiIkBCfz99wuO//z7wfDt92sGJiYmXqAUPxCzAQQQi4mJyX0gQwFZExcXJ8OaTXMYODmZYULsQMwMEEAgk9WB+D0jIyNElJ2NYdXG2QzsHOwMSE4EA4AAYjpz5swvIC3By8sLVrh2yzygiRwQTzD8Q1EMEEBwD/779+//7gcNDCysKN5gcJZtYADaqgpkvgAIILgM0CMYCtEBQAChBB1ORVCTAQKIBUmAC0gJATEnFvXfQSELEEBwk4GKQeHEBgoiLIr/AvEvgAADAH4mYO9cg5S2AAAAAElFTkSuQmCC", tx + 11, ty, 11, 11));
 	this.toolbox[this.toolbox.length-1].toFront();
-	this.toolbox[this.toolbox.length-1].node.onclick = function(){ self.unembed() };
+	this.toolbox[this.toolbox.length-1].node.onclick = function(){ self.unembed(); };
+	// delete (icon: stop.png)
+	this.toolbox.push(this.paper.image("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9oFEBQbDFwnwRsAAAE8SURBVBjTVZG9agJREEbP1TWL266wja2tWggipEhpIxh9gIUgiIW1vZWvkHJJHVLYig+ghWARbGzEYgMKrojr/t4UNwoZmGY4882BEfyVHA5HmOaEXA6khCSB83nK4fAmHOcAoAFI2+7RaIwxTQhDiGO1cLu1WK3egS6AkIPBiFptjGU9kc3Cfg++D4WCSg8CyWLxRRD0MxjGBMNQYLMJlQoUi9BuQ6kEx6PAMDrAs4aUcL3C5QLLJVSrUC6D68J8Duez0gIySKk8fV8ppCnoOux24HkQRUoH0EhTNTBNpeG6CqzX4XSC2eyRrBEEUzyvha7Deq1Oe54CXVcFxfE3sBXStgsYxjuW9UqaCsJQAfcOwx/i+EU4zkY8ntLrfZLPdwB1NklUYpJ0heNsHk8BIIr6RNEH/2t7BwF+AeKFndSgPkjIAAAAAElFTkSuQmCC", tx + 11, ty + 11, 11, 11));
+	this.toolbox[this.toolbox.length-1].toFront();
+	this.toolbox[this.toolbox.length-1].node.onclick = function(){ self.remove(); };
+	// clone (mint icon: sound_grey.png)
+	this.toolbox.push(this.paper.image("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAEjSURBVHjaYvz//z8DsQAggJjwSaanpwsBMReMDxBATAQMO/zv379eRkZGdiBmAgggJiymqaWlpS0GSrIAFZ4A0h5AYR4gZgEIICaoAg6ggolACea/f/9aAulAoDD3169fNwPZ0kA2B0gxQADBTBYECuYCaa7bt2/vACkEYs4zZ84cA9KsQAwKBUaAAGIBqfzz5w8jExPTRiCTXUFBwQ9IfwP5x8TExAJI/4IpBgggsOJ58+Y9B1JRQMwGdOdjoFP2ghRwcnL6A4P2KUghiA8QQGDFQIH/QGf8BDJ/L1myZC8fHx/IeiZmZmbr379/H4ApBgggFlgoANX/A1L/gJoYP336BHIG47Nnz1zu3r0LUvgD5FqAAGLEF4Og0EHy4G+AAAMAho1gqqugDLgAAAAASUVORK5CYII=", tx, ty + 11, 11, 11));
+	this.toolbox[this.toolbox.length-1].toFront();
+	this.toolbox[this.toolbox.length-1].node.onmousedown = function(){ dia._currentDrag = self.clone()[0]; console.log(dia._currentDrag[0])};
 	// toolbox wrapper
 	return this;
     },
@@ -557,6 +572,26 @@ Element.prototype = {
 	if (this.toolbox)
 	    for (var i = this.toolbox.length - 1; i >= 0; --i)
 		this.toolbox[i].translate(dx, dy);
+    },
+
+    /**
+     * Remove element.
+     */
+    remove: function(){
+	var i, l, registeredObjects = dia._registeredObjects[Joint.paper()];
+	this.removeToolbox();
+	this.unembed();
+	for (i = 0, l = this.inner.length; i < l; i++){
+	    this.inner[i].remove();
+	}
+	this.wrapper.remove();
+	for (i = 0, l = registeredObjects.length; i < l; i++){
+	    if (registeredObjects[i].euid() === this.euid()){
+		registeredObjects.splice(i, 1);
+		break;
+	    }
+	}
+	// @todo All joints starting/ending on me must change their from/to objects to dummy!
     },
 
     /**
@@ -604,7 +639,7 @@ Element.prototype = {
      */
     unembed: function(){
 	if (this.parentElement){
-	    this.parentElement.del(this);
+	    this.parentElement.delInner(this);
 	    this.parentElement = null;
 	    this.properties.parent = undefined;
 	}

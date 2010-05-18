@@ -65,7 +65,8 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
      */
     parse: function(json){
 	var arr = JSON.parse(json), o, m, e, 
-	    element, joints = [], i, len, elements = {};
+	    element, joints = [], i, len, elements = {},
+	    objects = [];
 
 	if (!(arr instanceof Array)) arr = [arr];
 
@@ -80,6 +81,7 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
 	    // so that they can connect them
 	    if (e === "joint"){
 		joints.push(o);		
+		objects.push(o);
 		continue;
 	    }
 	    // construct the element
@@ -101,10 +103,11 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
 	    element.translate(o.dx, o.dy);
 	    // element.rotate(o.rot);
 	    element.scale(o.sx, o.sy);
+	    objects.push(element);
 	}
 	this.hierarchize(elements);
 	this.createJoints(joints, elements);
-	return arr;
+	return objects;
     },
     hierarchize: function(elements){
 	var euid, element;
@@ -192,6 +195,13 @@ Joint.Mixin(Joint.dia.Element.prototype, /** @lends Joint.dia.Element.prototype 
      */
     stringify: function(){
 	return JSON.stringify(Joint.Mixin(this.properties, { euid: this.euid() }));
+    },
+    /**
+     * Clone element.
+     * @return {Element} Cloned element.
+     */
+    clone: function(){
+	return Joint.dia.parse(this.stringify());
     }
 });
 
