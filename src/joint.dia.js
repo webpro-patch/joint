@@ -64,6 +64,17 @@ var dia = Joint.dia = {
 	(this._registeredObjects[paper] || (this._registeredObjects[paper] = [])).push(obj);
     },
     /**
+     * Cancel registration of an element in the current paper.
+     * @param {Element} obj Object to be unregistered.
+     */
+    unregister: function(obj){
+	var paper = Joint.paper(),
+	    register = (this._registeredObjects[paper] || (this._registeredObjects[paper] = [])), idx = register.length;
+	while (idx--)
+	    if (register[idx] === obj)
+		register.splice(idx, 1);
+    },
+    /**
      * Register joint to the current paper. Avoid registering the the same joint twice.
      * You don't have to use this method unless you really know what you're doing.
      * @param {Joint}
@@ -71,6 +82,17 @@ var dia = Joint.dia = {
     registerJoint: function(j){
 	var paper = Joint.paper();
 	(this._registeredJoints[paper] || (this._registeredJoints[paper] = [])).push(j);	
+    },
+    /**
+     * Cancel registration of a joint in the current paper.
+     * @param {Joint} j Joint to be unregistered.
+     */
+    unregisterJoint: function(j){
+	var paper = Joint.paper(),
+	    register = (this._registeredJoints[paper] || (this._registeredJoints[paper] = [])), idx = register.length;
+	while (idx--)
+	    if (register[idx] === obj)
+		register.splice(idx, 1);
     }
 };
 
@@ -575,23 +597,53 @@ Element.prototype = {
     },
 
     /**
+     * Disconnects element from all joints.
+     */
+    disconnect: function(){
+	var joints = this.joints(), idx = joints.length, j;
+	while (idx--){
+	    j = joints[idx];
+	    if (j.endObject().shape === this) j.draw().dummyEnd();
+	    if (j.startObject().shape === this) j.draw().dummyStart();
+	}
+    },
+
+    /**
      * Remove element.
      */
     remove: function(){
-	var i, l, registeredObjects = dia._registeredObjects[Joint.paper()];
+	var inners = this.inner, idx = inners.length;
+	this.disconnect();
 	this.removeToolbox();
 	this.unembed();
-	for (i = 0, l = this.inner.length; i < l; i++){
-	    this.inner[i].remove();
+	while (idx--) inners[idx].remove();
+	this.wrapper.remove();
+	dia.unregister(this);
+    },
+
+    /**
+     * Remove element and all joints pointing from and to this element.
+     */
+    liquidate: function(){
+	var joints = this.joints(), idx = joints.length, j, inners = this.inner;
+	// remove joints
+	while (idx--){
+	    j = joints[idx];
+	    j.freeJoint(j.startObject());
+	    j.freeJoint(j.endObject());
+	    j.clean().connection().startCap().endCap().handleStart().handleEnd().label();
+	    dia.unregisterJoint(j);
+	}
+	this.removeToolbox();
+	this.unembed();
+	// liquidate subelements
+	idx = inners.length;
+	while (idx--){
+	    if (inners[idx].liquidate) inners[idx].liquidate();
+	    else inners[idx].remove();
 	}
 	this.wrapper.remove();
-	for (i = 0, l = registeredObjects.length; i < l; i++){
-	    if (registeredObjects[i].euid() === this.euid()){
-		registeredObjects.splice(i, 1);
-		break;
-	    }
-	}
-	// @todo All joints starting/ending on me must change their from/to objects to dummy!
+	dia.unregister(this);
     },
 
     /**
