@@ -647,6 +647,24 @@ Element.prototype = {
     },
 
     /**
+     * Highlights the element.
+     * @return {Element} Return this.
+     */
+    highlight: function(){
+	this.wrapper.attr("stroke", "red");
+	return this;
+    },
+
+    /**
+     * Unhighlights the element.
+     * @return {Element} Return this.
+     */
+    unhighlight: function(){
+	this.wrapper.attr("stroke", this.properties.attrs.stroke || "black");
+	return this;
+    },
+
+    /**
      * Embed me into the first registered dia.Element whos bounding box 
      * contains my bounding box origin. Both elements will behave as a whole.
      * @todo It is probably out of date. Retest!!!
