@@ -25,10 +25,10 @@ Joint.Mixin(Joint.prototype, /** @lends Joint.prototype */ {
 	// @todo Ugly!!! Joint shouldn't know anything about Joint.dia! Remove!
 
 	// from/to
-	if (start.shape.wholeShape)
-	    j.from = start.shape.wholeShape.euid();
-	if (end.shape.wholeShape)
-	    j.to = end.shape.wholeShape.euid();
+	if (start.shape.wrapper)
+	    j.from = start.shape.euid();
+	if (end.shape.wrapper)
+	    j.to = end.shape.euid();
 
 	if (start.dummy)
 	    j.from = start.shape.attrs.cx + "@" + start.shape.attrs.cy;
@@ -38,7 +38,7 @@ Joint.Mixin(Joint.prototype, /** @lends Joint.prototype */ {
 	// registered objects processing
 	while(iRegs--){
 	    reg = regs[iRegs];
-	    j.registered[reg._capToStick].push(reg.euid());
+	    j.registered[reg._capToStick || "both"].push(reg.euid());
 	}
 	return j;
     },

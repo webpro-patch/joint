@@ -91,7 +91,7 @@ var dia = Joint.dia = {
 	var paper = Joint.paper(),
 	    register = (this._registeredJoints[paper] || (this._registeredJoints[paper] = [])), idx = register.length;
 	while (idx--)
-	    if (register[idx] === obj)
+	    if (register[idx] === j)
 		register.splice(idx, 1);
     }
 };

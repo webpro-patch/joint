@@ -875,8 +875,8 @@ Joint.prototype = {
 	var 
 	self = this,
 	csolver = this.csolver,
-	paper = this.paper,
-	csolverMemento = csolver.getMemento();
+	paper = this.paper;
+//	csolverMemento = csolver.getMemento();
 
 	// set contraint solver
 	this.setConstraintSolver(csolver);

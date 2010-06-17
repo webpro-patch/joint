@@ -126,11 +126,11 @@ var app = {
 			    }
 			}
 			if (cmd.base[2] == "aggregation")
-			    Joint(from, to, Joint.dia.uml.aggregationArrow).registerForever(Joint.dia.registeredElements());
+			    Joint.dia.Joint(from, to, Joint.dia.uml.aggregationArrow).registerForever(Joint.dia.registeredElements());
 			else if (cmd.base[2] == "generalization")
-			    Joint(from, to, Joint.dia.uml.generalizationArrow).registerForever(Joint.dia.registeredElements());
+			    Joint.dia.Joint(from, to, Joint.dia.uml.generalizationArrow).registerForever(Joint.dia.registeredElements());
 			else
-			    Joint(from, to, Joint.dia.uml.arrow).registerForever(Joint.dia.registeredElements());
+			    Joint.dia.Joint(from, to, Joint.dia.uml.arrow).registerForever(Joint.dia.registeredElements());
 			break;
 		    }
 		    break;
