@@ -603,9 +603,26 @@ Element.prototype = {
 	var joints = this.joints(), idx = joints.length, j;
 	while (idx--){
 	    j = joints[idx];
-	    if (j.endObject().shape === this) j.draw().dummyEnd();
-	    if (j.startObject().shape === this) j.draw().dummyStart();
+	    
+	    if (j.endObject().shape.wholeShape === this){
+		j.freeJoint(j.endObject());
+		j.draw().dummyEnd();
+	    }
+	    if (j.startObject().shape.wholeShape === this){
+		j.freeJoint(j.startObject());
+		j.draw().dummyStart();
+	    }
 	}
+    },
+
+    /**
+     * Unregister the element from the joint registeredObjects.
+     * @private
+     */
+    unregisterFromJoints: function(){
+	var joints = this.joints(), idx = joints.length;
+	while (idx--) joints[idx].unregister(this);
+	return this;
     },
 
     /**
@@ -614,6 +631,7 @@ Element.prototype = {
     remove: function(){
 	var inners = this.inner, idx = inners.length;
 	this.disconnect();
+	this.unregisterFromJoints();
 	this.removeToolbox();
 	this.unembed();
 	while (idx--) inners[idx].remove();
@@ -633,6 +651,7 @@ Element.prototype = {
 	    j.freeJoint(j.endObject());
 	    j.clean().connection().startCap().endCap().handleStart().handleEnd().label();
 	    dia.unregisterJoint(j);
+	    j.unregister(this);
 	}
 	this.removeToolbox();
 	this.unembed();
@@ -660,7 +679,7 @@ Element.prototype = {
      * @return {Element} Return this.
      */
     unhighlight: function(){
-	this.wrapper.attr("stroke", this.properties.attrs.stroke || "black");
+	this.wrapper.attr("stroke", this.properties.attrs.stroke || "#000");
 	return this;
     },
 

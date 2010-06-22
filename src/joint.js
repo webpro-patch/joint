@@ -11,6 +11,10 @@ atan2 = math.atan2,
 acos = math.acos,
 PI = math.PI;
 
+var enqueue = function(fnc){ 
+    setTimeout(fnc, 0); 
+};
+
 if (!global.console){
     global.console = {
 	log: function(){},
@@ -79,33 +83,6 @@ ConstraintSolver.prototype = {
 	 sPoint: undefined,
 	 ePoint: undefined
 	 */
-    },
-    /**
-     * Get state of csolver. Useful for possible undo operations. (Command design pattern)
-     * @todo get a deep copy of the state.
-     */    
-    getMemento: function(){
-	var s = this._state;
-	if (!s.sBoundPoint || !s.eBoundPoint){
-	    return {
-		empty: true,
-		sBoundPoint: point(0, 0),
-		eBoundPoint: point(0, 0),
-		conPathCommands: [],
-		labelPoint: point(0, 0),
-		sTheta: {degrees: 0, radians: 0},
-		eTheta: {degrees: 0, radians: 0}
-	    };
-	} else {
-	    return {
-		sBoundPoint: s.sBoundPoint.deepCopy(),
-		eBoundPoint: s.eBoundPoint.deepCopy(),
-		conPathCommands: s.conPathCommands.slice(0),
-		labelPoint: (s.labelPoint) ? s.labelPoint.deepCopy() : point(0, 0),
-		sTheta: {degrees: s.sTheta.degrees, radians: s.sTheta.radians},
-		eTheta: {degrees: s.eTheta.degrees, radians: s.eTheta.radians}
-	    };
-	}
     },
     /**
      * Invalidate csolver, i.e. each variable will be computed again.
@@ -652,13 +629,10 @@ Joint.prototype = {
      * @param {StartObject|EndObject} obj
      */
     freeJoint: function(obj){
-	var 
-	jar = obj.shape.joints(),	// joints array
-	i = jar.indexOf(this);
+	var jar = obj.shape ? obj.shape.joints() : obj.joints(),
+	    i = jar.indexOf(this);
 	jar.splice(i, 1);
-	if (jar.length === 0){
-	    delete obj.shape._joints;
-	}
+	return this;
     },
     /**
      * Add reference to Joint to obj.
@@ -689,13 +663,13 @@ Joint.prototype = {
 
 	if (this.isStartCap(cap)){
 	    if (!this.isStartDummy()){
-		this._lastStartCapSticker = this.startObject();
+		this._lastStartCapSticker = this.startObject().shape;
 		this.draw().dummyStart();
 	    }
 	    this.state = this.STARTCAPDRAGGING;
 	} else if (this.isEndCap(cap)){
 	    if (!this.isEndDummy()){
-		this._lastEndCapSticker = this.endObject();
+		this._lastEndCapSticker = this.endObject().shape;
 		this.draw().dummyEnd();
 	    }
 	    this.state = this.ENDCAPDRAGGING;
@@ -757,39 +731,37 @@ Joint.prototype = {
 	this.update();
     },
     capEndDragging: function(){
-	var dummyBB, capType;
+	var dummyBB, capType, disconnectedFrom,
+	    STARTCAPDRAGGING = (this.state === this.STARTCAPDRAGGING),
+	    ENDCAPDRAGGING = (this.state === this.ENDCAPDRAGGING);
 
-	if (this.state === this.STARTCAPDRAGGING){
+	if (STARTCAPDRAGGING){
 	    dummyBB = this.startObject().shape.getBBox();
-	} else if (this.state === this.ENDCAPDRAGGING){
+	    disconnectedFrom = this._lastStartCapSticker;
+	} else if (ENDCAPDRAGGING){
 	    dummyBB = this.endObject().shape.getBBox();
+	    disconnectedFrom = this._lastEndCapSticker;
 	}
+
+	// remove pointer to me from the old object
+	if (disconnectedFrom) this.freeJoint(disconnectedFrom);
+
 	var o = this.objectContainingPoint(point(dummyBB.x, dummyBB.y));
-	if (o === null){
-	    var disconnectedFrom = null;
-	    if (this.state === this.STARTCAPDRAGGING){
-		capType = "start";
-		disconnectedFrom = this._lastStartCapSticker;
-	    } else if (this.state === this.ENDCAPDRAGGING){
-		capType = "end";
-		disconnectedFrom = this._lastEndCapSticker;
-	    }
-	    if (disconnectedFrom !== null){
-		this.callback("disconnected", disconnectedFrom, [capType]);
-	    }
+	if (!o){
+	    capType = (STARTCAPDRAGGING) ? "start" : "end";
+	    this.callback("disconnected", disconnectedFrom, [capType]);
 	    return;
 	}
-
-	if (this.state === this.STARTCAPDRAGGING && o._capToStick !== "end"){
+	this.callback("disconnected", disconnectedFrom, [capType]);
+	if (STARTCAPDRAGGING && o._capToStick !== "end")
 	    capType = "start";
-	} else if (this.state === this.ENDCAPDRAGGING && o._capToStick !== "start"){
+	else if (ENDCAPDRAGGING && o._capToStick !== "start")
 	    capType = "end";
-	}
+
 	this.callback("justConnected", o, [capType]);
 	this.replaceDummy(this[capType + "Object"](), o);
 	this.addJoint(o);
-	this._lastStartCapSticker = null;
-	this._lastEndCapSticker = null;
+	this._lastStartCapSticker = this._lastEndCapSticker = null;
 	this.update();
     },
     connectionWiring: function(e){
@@ -799,10 +771,10 @@ Joint.prototype = {
 	this.callback("wiring", this, [mousePos]);
     },
     update: function(){
-//	this.redraw().listenAll();	
+	this.redraw().listenAll();	
 	// setTimeout makes drawing much faster!
-	var self = this; 
-	setTimeout(function(){self.redraw().listenAll();}, 0);
+//	var self = this; 
+//	enqueue(function(){self.redraw().listenAll();});
     },
     redraw: function(){
 	this.clean().connection().startCap().endCap().handleStart().handleEnd().label();
@@ -876,7 +848,6 @@ Joint.prototype = {
 	self = this,
 	csolver = this.csolver,
 	paper = this.paper;
-//	csolverMemento = csolver.getMemento();
 
 	// set contraint solver
 	this.setConstraintSolver(csolver);
@@ -1240,9 +1211,8 @@ Joint.prototype = {
      * @example j.unregister(circle, "end");
      */
     unregister: function(obj, cap){
-	if (typeof cap === "undefined"){
-	    cap = "both";
-	}
+	cap = cap || "both";
+
 	var index = -1;
 	for (var i = 0, len = this._registeredObjects.length; i < len; i++){
 	    if (this._registeredObjects[i] === obj && 
@@ -1360,11 +1330,12 @@ Joint.prototype = {
      * @return {Joint}
      */
     showHandle: function(cap){
-	if (typeof cap === "undefined"){
-	    this._opt.handle.start.enabled = true;
-	    this._opt.handle.end.enabled = true;
+	var handle = this._opt.handle;
+	if (!cap){
+	    handle.start.enabled = true;
+	    handle.end.enabled = true;
 	} else {
-	    this._opt.handle[cap].enabled = true;
+	    handle[cap].enabled = true;
 	}
 	this.update();
 	return this;
@@ -1374,11 +1345,12 @@ Joint.prototype = {
      * @return {Joint}
      */
     hideHandle: function(cap){
-	if (typeof cap === "undefined"){
-	    this._opt.handle.start.enabled = false;
-	    this._opt.handle.end.enabled = false;
+	var handle = this._opt.handle;
+	if (!cap){
+	    handle.start.enabled = false;
+	    handle.end.enabled = false;
 	} else {
-	    this._opt.handle[cap].enabled = false;
+	    handle[cap].enabled = false;
 	}
 	this.update();
 	return this;
@@ -1424,6 +1396,24 @@ Joint.prototype = {
 	    this._opt.bboxCorrection[cap] = corr;	    
 	}
 	this.update();
+	return this;
+    },
+
+    /**
+     * Highlight connection.
+     * @return {Joint} Return this.
+     */
+    highlight: function(){
+	this.connection().attr("stroke", "red");
+	return this;
+    },
+
+    /**
+     * Unhighlight connection.
+     * @return {Joint} Return this.
+     */
+    unhighlight: function(){
+	this.connection().attr("stroke", this._opt.attrs.stroke || "#000");
 	return this;
     }
 };
@@ -1486,10 +1476,9 @@ Joint.getArrow = function(type, size, attrs){
 	size = 2; // default
     }
     var arrow = Joint.arrows[type](size);
+    if (!arrow.attrs) arrow.attrs = {};
+
     if (attrs){
-	if (!arrow.attrs){
-	    arrow.attrs = {};
-	}
 	for (var key in attrs){
 	    arrow.attrs[key] = attrs[key];
 	}
