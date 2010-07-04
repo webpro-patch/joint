@@ -25,15 +25,15 @@ Joint.Mixin(Joint.prototype, /** @lends Joint.prototype */ {
 	// @todo Ugly!!! Joint shouldn't know anything about Joint.dia! Remove!
 
 	// from/to
-	if (start.shape.wholeShape)
-	    j.from = start.shape.wholeShape.euid();
-	if (end.shape.wholeShape)
-	    j.to = end.shape.wholeShape.euid();
+	if (start.wholeShape)
+	    j.from = start.wholeShape.euid();
+	if (end.wholeShape)
+	    j.to = end.wholeShape.euid();
 
-	if (start.dummy)
-	    j.from = start.shape.attrs.cx + "@" + start.shape.attrs.cy;
-	if (end.dummy)
-	    j.to = end.shape.attrs.cx + "@" + end.shape.attrs.cy;
+	if (this.isStartDummy())
+	    j.from = start.attrs.cx + "@" + start.attrs.cy;
+	if (this.isEndDummy())
+	    j.to = end.attrs.cx + "@" + end.attrs.cy;
 
 	// registered objects processing
 	while(iRegs--){

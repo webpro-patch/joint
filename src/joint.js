@@ -487,25 +487,23 @@ function Joint(from, to, opt){
     startObject = this._start,
     endObject = this._end;
 
-//    if (from._isPoint){
-    if (from.x && from.y){
+    if (from.x && from.y){	// from is point?
 	// draw dummy start
 	var dummyStart = this._opt.dummy.start;
 	startObject.shape = paper.circle(from.x, from.y, dummyStart.radius).attr(dummyStart.attrs);
 	startObject.dummy = true;
 	startObject.shape.show();
     } else {
-	startObject.shape = from;
+	startObject.shape = from.yourself();
     }
-//    if (to._isPoint){
-    if (to.x && to.y){
+    if (to.x && to.y){		// to is point?
 	// draw dummy end
 	var dummyEnd = this._opt.dummy.end;
 	endObject.shape = paper.circle(to.x, to.y, dummyEnd.radius).attr(dummyEnd.attrs);
 	endObject.dummy = true;
 	endObject.shape.show();
     } else {
-	endObject.shape = to;
+	endObject.shape = to.yourself();
     }
     /**
      * Constraint solver.
@@ -575,8 +573,8 @@ Joint.prototype = {
      * Getters.
      */
     connection: function(){ return this._con; },
-    endObject: function(){ return this._end; },
-    startObject: function(){ return this._start; },
+    endObject: function(){ return this._end.shape; },
+    startObject: function(){ return this._start.shape; },
     endCap: function(){ return this._endCap; },
     endCapConnected: function(){ return !this._end.dummy; },
     startCap: function(){ return this._startCap; },
@@ -612,11 +610,11 @@ Joint.prototype = {
      * who's bounding box contains the point p.
      * @todo check document.elementFromPoint(x, y)
      * @private
-     * @param {Point}
+     * @param {Point} p
      */
     objectContainingPoint: function(p){
 	for (var i = this._registeredObjects.length - 1; i >= 0; --i){
-	    var o = this._registeredObjects[i];
+	    var o = this._registeredObjects[i].yourself();
 	    if (rect(o.getBBox()).containsPoint(p)){
 		return o;
 	    }
@@ -640,15 +638,16 @@ Joint.prototype = {
      * @param {RaphaelObject} obj
      */
     addJoint: function(obj){
+	var joints;
 	if (!obj.joints){
+	    console.log("!obj.joints WHICH IS WRONG");
 	    obj._joints = [];
 	    obj.joints = function(){ return this._joints; };
 	}
+	joints = obj.joints();
 	// push the Joint object into obj.joints array
 	// but only if obj.joints already doesn't have that Joint object
-	if (obj.joints().indexOf(this) === -1){
-	    obj.joints().push(this);
-	}
+	if (joints.indexOf(this) === -1) joints.push(this);
     },
     /**
      * MouseDown event callback when on cap.
@@ -663,13 +662,13 @@ Joint.prototype = {
 
 	if (this.isStartCap(cap)){
 	    if (!this.isStartDummy()){
-		this._lastStartCapSticker = this.startObject().shape;
+		this._lastStartCapSticker = this.startObject();
 		this.draw().dummyStart();
 	    }
 	    this.state = this.STARTCAPDRAGGING;
 	} else if (this.isEndCap(cap)){
 	    if (!this.isEndDummy()){
-		this._lastEndCapSticker = this.endObject().shape;
+		this._lastEndCapSticker = this.endObject();
 		this.draw().dummyEnd();
 	    }
 	    this.state = this.ENDCAPDRAGGING;
@@ -699,8 +698,8 @@ Joint.prototype = {
 	// or at the start of the connection
 	// -> @todo 
 	var 
-	sbbCenter = rect(this.startObject().shape.getBBox()).center(),
-	ebbCenter = rect(this.endObject().shape.getBBox()).center(),
+	sbbCenter = rect(this.startObject().getBBox()).center(),
+	ebbCenter = rect(this.endObject().getBBox()).center(),
 	// squared lengths of the lines from the center of 
 	// start/end object bbox to the mouse position
 	smLineSqrLen = line(sbbCenter, mousePos).squaredLength(),
@@ -719,9 +718,9 @@ Joint.prototype = {
     capDragging: function(e){
 	// move dummy object
 	if (this.state === this.STARTCAPDRAGGING){
-	    this.startObject().shape.translate(e.clientX - this._dx, e.clientY - this._dy);
+	    this.startObject().translate(e.clientX - this._dx, e.clientY - this._dy);
 	} else if (this.state === this.ENDCAPDRAGGING) {
-	    this.endObject().shape.translate(e.clientX - this._dx, e.clientY - this._dy);	
+	    this.endObject().translate(e.clientX - this._dx, e.clientY - this._dy);	
 	} else {
 	    return;	// should not happen
 	}
@@ -731,37 +730,31 @@ Joint.prototype = {
 	this.update();
     },
     capEndDragging: function(){
-	var dummyBB, capType, disconnectedFrom,
+	var dummyBB, disconnectedFrom,
 	    STARTCAPDRAGGING = (this.state === this.STARTCAPDRAGGING),
-	    ENDCAPDRAGGING = (this.state === this.ENDCAPDRAGGING);
+	    ENDCAPDRAGGING = (this.state === this.ENDCAPDRAGGING),
+	    capType = (STARTCAPDRAGGING) ? "start" : "end";
 
 	if (STARTCAPDRAGGING){
-	    dummyBB = this.startObject().shape.getBBox();
+	    dummyBB = this.startObject().getBBox();
 	    disconnectedFrom = this._lastStartCapSticker;
 	} else if (ENDCAPDRAGGING){
-	    dummyBB = this.endObject().shape.getBBox();
+	    dummyBB = this.endObject().getBBox();
 	    disconnectedFrom = this._lastEndCapSticker;
 	}
+	this._lastStartCapSticker = this._lastEndCapSticker = null;
 
 	// remove pointer to me from the old object
-	if (disconnectedFrom) this.freeJoint(disconnectedFrom);
-
-	var o = this.objectContainingPoint(point(dummyBB.x, dummyBB.y));
-	if (!o){
-	    capType = (STARTCAPDRAGGING) ? "start" : "end";
+	if (disconnectedFrom){
+	    this.freeJoint(disconnectedFrom);
 	    this.callback("disconnected", disconnectedFrom, [capType]);
-	    return;
 	}
-	this.callback("disconnected", disconnectedFrom, [capType]);
-	if (STARTCAPDRAGGING && o._capToStick !== "end")
-	    capType = "start";
-	else if (ENDCAPDRAGGING && o._capToStick !== "start")
-	    capType = "end";
-
-	this.callback("justConnected", o, [capType]);
-	this.replaceDummy(this[capType + "Object"](), o);
-	this.addJoint(o);
-	this._lastStartCapSticker = this._lastEndCapSticker = null;
+	var o = this.objectContainingPoint(point(dummyBB.x, dummyBB.y));
+	if (o){
+	    this.callback("justConnected", o, [capType]);
+	    this.replaceDummy(this["_" + capType], o);
+	    this.addJoint(o);
+	}
 	this.update();
     },
     connectionWiring: function(e){
@@ -779,10 +772,6 @@ Joint.prototype = {
     redraw: function(){
 	this.clean().connection().startCap().endCap().handleStart().handleEnd().label();
 	this.draw().connection().startCap().endCap().handleStart().handleEnd().label();
-/*
-	this.clean().connection().label();
-	this.draw().connection().transStartCap().transEndCap().label();
-*/
 	return this;
     },
     listenAll: function(){
@@ -1173,15 +1162,10 @@ Joint.prototype = {
 	    cap = "both";
 	}
 	// prepare array of objects that are to be registered
-	var toRegister = [];
-	if (obj.constructor == Array){
-	    toRegister = obj;
-	} else {
-	    toRegister = [obj];
-	}
+	var toRegister = (obj.constructor == Array) ? obj : [obj];
 	// register all objects in toRegister array
 	for (var i = 0, len = toRegister.length; i < len; i++){
-	    toRegister[i]._capToStick = cap;
+	    toRegister[i].yourself()._capToStick = cap;
 	    this._registeredObjects.push(toRegister[i]);
 	}
 	return this;
@@ -1216,7 +1200,7 @@ Joint.prototype = {
 	var index = -1;
 	for (var i = 0, len = this._registeredObjects.length; i < len; i++){
 	    if (this._registeredObjects[i] === obj && 
-		this._registeredObjects[i]._capToStick === cap){
+		this._registeredObjects[i].yourself()._capToStick === cap){
 		index = i;
 		break;
 	    }
@@ -1466,7 +1450,7 @@ Joint.resetPaper = function resetPaper(){
 	return;
     }
     var canvas = this._paper.canvas;
-    canvas.parentNode.removeChild(canvas);    
+    canvas.parentNode.removeChild(canvas);
     Joint.paper.apply(Joint, this._paperArguments);
 };
 
@@ -2362,6 +2346,10 @@ global.Raphael.el.joint = function(to, opt){
  */
 global.Raphael.el.euid = function(){
     return Joint.generateEuid.call(this);
+};
+
+global.Raphael.el.yourself = function(){
+    return this;
 };
 
 })(this);	// END CLOSURE

@@ -293,6 +293,16 @@ Element.prototype = {
 	return this.wrapper.joints();
     },
 
+    /**
+     * Used in joint.js for unified access to the wrapper.
+     * For all RaphaelObjects returns just this.
+     * @private
+     * @return {RaphaelObject} Return wrapper.
+     */
+    yourself: function(){
+	return this.wrapper;	
+    },
+
     updateJoints: function(){
 	var joints = this.wrapper.joints();
 	if (joints){
@@ -396,6 +406,7 @@ Element.prototype = {
      * @private
      */
     dragger: function(e){
+	if (!this.wholeShape._opt.draggable) return;
 	dia._currentDrag = this.wholeShape;
 	if (dia._currentDrag._opt.ghosting){
 	    dia._currentDrag.createGhost();
@@ -604,13 +615,15 @@ Element.prototype = {
 	while (idx--){
 	    j = joints[idx];
 	    
-	    if (j.endObject().shape.wholeShape === this){
+	    if (j.endObject().wholeShape === this){
 		j.freeJoint(j.endObject());
 		j.draw().dummyEnd();
+		j.update();
 	    }
-	    if (j.startObject().shape.wholeShape === this){
+	    if (j.startObject().wholeShape === this){
 		j.freeJoint(j.startObject());
 		j.draw().dummyStart();
+		j.update();
 	    }
 	}
     },
@@ -663,6 +676,16 @@ Element.prototype = {
 	}
 	this.wrapper.remove();
 	dia.unregister(this);
+    },
+
+    /**
+     * Enable/disable dragging of the element.
+     * @param {boolean} enable True/false.
+     * @return {Element} Return this.
+     */
+    draggable: function(enable){
+	this._opt.draggable = enable;
+	return this;	
     },
 
     /**
