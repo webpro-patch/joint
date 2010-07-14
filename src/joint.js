@@ -40,275 +40,6 @@ if (!Array.indexOf){
 }
 
 /**
- * Computes all the neccessary variables for drawing a connection.
- * Singleton.
- * @private
- * @constructor
- * @todo implement Memento object.
- */
-function ConstraintSolver(){}
-
-ConstraintSolver.prototype = {
-    _startShapeBBox: null,
-    _endShapeBBox: null,
-    _startShapeType: null,
-    _endShapeType: null,    
-    _conVertices: [],
-    _arrowStartShift: {dx: 0, dy: 0},
-    _arrowEndShift: {dx: 0, dy: 0},
-    _bboxCorrection: {
-	start: { type: null, x: 0, y: 0, width: 0, height: 0 },
-	end: { type: null, x: 0, y: 0, width: 0, height: 0 }
-    },
-    _flags: {
-	smooth: false,
-	label: false
-    },
-    _state: {
-	/*
-	 sBoundPoint: undefined,
-	 eBoundPoint: undefined,
-	 conPathCommands: undefined,
-	 labelPoint: undefined,
-	 sTheta: undefined,
-	 eTheta: undefined
-	 */
-    },
-    _aux: {
-	/*
-	 sbb: undefined,
-	 ebb: undefined,
-	 sbbCenter: undefined,
-	 ebbCenter: undefined,
-	 sPoint: undefined,
-	 ePoint: undefined
-	 */
-    },
-    /**
-     * Invalidate csolver, i.e. each variable will be computed again.
-     */
-    invalidate: function(){
-	this._state = {};
-	this._aux = {};
-    },
-    /**
-     * Find point on an object of type 'type' with bounding box 'r' where line starting
-     * from r's center ending in point 'p' intersects the object.
-     */
-    boundPoint: function(r, type, p){
-	var rCenter = r.center();
-	if (type === "circle" || 
-	    type === "ellipse"){
-	    return ellipse(rCenter, r.width/2, r.height/2).intersectionWithLineFromCenterToPoint(p);
-	}
-	// BUG: in lines intersection, can be all null
-	// it happens when point is located on the bb boundary
-	return r.boundPoint(p) || rCenter;
-    },
-    /**
-     * Intersection of a line leading from __sbbCenter to __ebbCenter 
-     * (or first connection vertex) and the start object boundary.
-     */
-    sBoundPoint: function(){
-	if (this._state.sBoundPoint){
-	    return this._state.sBoundPoint;
-	}
-	var from;
-	if (this._conVertices.length > 0){
-	    from = this._conVertices[0];
-	} else {
-	    from = this.ebbCenter();
-	}
-	this._state.sBoundPoint = this.boundPoint(this.sbb(), this._bboxCorrection.start.type || this._startShapeType, from);
-	return this._state.sBoundPoint;
-    },
-    /** 
-     * intersection of a line leading from __ebbCenter to __sbbCenter 
-     * (or last connection vertex) and the end object boundary
-     */
-    eBoundPoint: function(){
-	if (this._state.eBoundPoint){
-	    return this._state.eBoundPoint;
-	}
-	var from;
-	if (this._conVertices.length > 0){
-	    from = this._conVertices[this._conVertices.length - 1];
-	} else {
-	    from = this.sbbCenter();
-	}
-	this._state.eBoundPoint = this.boundPoint(this.ebb(), this._bboxCorrection.end.type || this._endShapeType, from);
-	return this._state.eBoundPoint;
-    },
-    /**
-     * Angle between __sbbCenter and __ebbCenter (or first connection vertex).
-     */
-    sTheta: function(){
-	if (this._state.sTheta){
-	    return this._state.sTheta;
-	}
-	var to;
-	if (this._conVertices.length > 0){
-	    to = this._conVertices[0];
-	} else {
-	    to = this.ebbCenter();
-	}
-	this._state.sTheta = this.sbbCenter().theta(to);
-	return this._state.sTheta;
-    },
-    /**
-     * Angle between __ebbCenter and __sbbCenter (or last connection vertex).
-     */
-    eTheta: function(){
-	if (this._state.eTheta){
-	    return this._state.eTheta;
-	}
-	var from;
-	if (this._conVertices.length > 0){
-	    from = this._conVertices[this._conVertices.length - 1];
-	} else {
-	    from = this.sbbCenter();
-	}
-	this._state.eTheta = from.theta(this.ebbCenter());
-	return this._state.eTheta;
-    },
-    /**
-     * Connection path commands.
-     */
-    conPathCommands: function(){
-	if (this._state.conPathCommands){
-	    return this._state.conPathCommands;
-	}
-	var
-	sPoint = this.sPoint(),
-	ePoint = this.ePoint(),
-	state = this._state;
-
-	if (this._flags.smooth){
-	    state.conPathCommands = Bezier.curveThroughPoints([point(sPoint.x, sPoint.y)].concat(this._conVertices, [point(ePoint.x, ePoint.y)]));
-	} else {
-	    state.conPathCommands = ["M", sPoint.x, sPoint.y];
-	    for (var i = 0, len = this._conVertices.length; i < len; i++){
-		state.conPathCommands.push("L", this._conVertices[i].x, this._conVertices[i].y);
-	    }
-	    state.conPathCommands.push("L", ePoint.x, ePoint.y);
-	}
-	return state.conPathCommands;
-    },
-    /**
-     * Label position.
-     */
-    labelPoint: function(){
-	var state = this._state;
-
-	if (state.labelPoint){
-	    return state.labelPoint;
-	}
-	var 
-	sPoint = this.sPoint(),
-	ePoint = this.ePoint();
-
-	state.labelPoint = sPoint;
-	for (var i = 0, len = this._conVertices.length; i < len; i++){
-	    state.labelPoint = line(state.labelPoint, this._conVertices[i]).midpoint();
-	}
-	state.labelPoint = line(state.labelPoint, ePoint).midpoint();
-	return state.labelPoint;
-    },
-    /**
-     * Start object bounding box.
-     */
-    sbb: function(){
-	var aux = this._aux;
-
-	if (aux.sbb){
-	    return aux.sbb;
-	}
-	aux.sbb = rect(this._startShapeBBox).moveAndExpand(this._bboxCorrection.start);
-	return aux.sbb;
-    },
-    /**
-     * Start object bounding box center point.
-     */
-    sbbCenter: function(){
-	var aux = this._aux;
-
-	if (aux.sbbCenter){
-	    return aux.sbbCenter;
-	}
-	aux.sbbCenter = this.sbb().center();
-	return aux.sbbCenter;
-    },
-    /**
-     * End object bounding box.
-     */
-    ebb: function(){
-	var aux = this._aux;
-
-	if (aux.ebb){
-	    return aux.ebb;
-	}
-	aux.ebb = rect(this._endShapeBBox).moveAndExpand(this._bboxCorrection.end);
-	return aux.ebb;
-    },
-    /**
-     * End object bounding box center point.
-     */
-    ebbCenter: function(){
-	var aux = this._aux;
-
-	if (aux.ebbCenter){
-	    return aux.ebbCenter;
-	}
-	aux.ebbCenter = this.ebb().center();
-	return aux.ebbCenter;
-    },
-    /**
-     * __sBoundPoint moved in the direction of __eBoundPoint (or first connection vertex) 
-     * by start cap width.
-     */
-    sPoint: function(){
-	var aux = this._aux;
-
-	if (aux.sPoint){
-	    return aux.sPoint;
-	}
-	var 
-	sBoundPoint = this.sBoundPoint(),
-	sTheta = this.sTheta(),
-	arrowStartShift = this._arrowStartShift;
-	
-	aux.sPoint = point(
-	    sBoundPoint.x + (2 * arrowStartShift.dx * cos(sTheta.radians)),
-	    sBoundPoint.y + (-2 * arrowStartShift.dy * sin(sTheta.radians))
-	);
-	return aux.sPoint;
-    },
-    /**
-     * __eBoundPoint moved in the direction of __sBoundPoint (or last connection vertex) 
-     * by end cap width.
-     */
-    ePoint: function(){
-	var aux = this._aux;
-
-	if (aux.ePoint){
-	    return aux.ePoint;
-	}
-	var 
-	eBoundPoint = this.eBoundPoint(),
-	eTheta = this.eTheta(),
-	arrowEndShift = this._arrowEndShift;
-	
-	aux.ePoint = point(
-	    eBoundPoint.x + (-2 * arrowEndShift.dx * cos(eTheta.radians)),
-	    eBoundPoint.y + (2 * arrowEndShift.dy * sin(eTheta.radians))
-	);
-	return aux.ePoint;
-    }
-};
-
-
-
-/**
  * @name Joint
  * @constructor
  * @param {RaphaelObject|Shape|object} from Object/position where the connection starts.
@@ -402,17 +133,12 @@ function Joint(from, to, opt){
     // these objects are the ones I can connect to
     this._registeredObjects = [];
 
-    // label related properties
-    this._labelBox = null;	// rectangle where labelText is located
-    this._labelText = null;	// Raphael text element that keeps its position with connection path middle point
-    
-    this._con = null;		// holds the joint path
     this._conVerticesCurrentIndex = 0;
     this._nearbyVertexSqrDist = 500;	// sqrt(this._nearbyVertexSqrDist) is tolerable distance of vertex moving
-    this._startCap = null;	// start glyph (arrow)
-    this._endCap = null;	// end glyph (arrow)
     this._lastStartCapSticker = null;	// temporaries for last start/end cap stickers (objects to which the caps sticked to e.g. while moving)
     this._lastEndCapSticker = null;
+
+    this.dom = {};	// holds all dom elements
 
     // connection from start to end
     this._start = { // start object
@@ -424,7 +150,7 @@ function Joint(from, to, opt){
 	dummy: false		// is it a dummy object?
     };		
 
-    // _con path options
+    // connection options
     this._opt = {
 	vertices: [],	// joint path vertices
 	attrs: {
@@ -505,15 +231,6 @@ function Joint(from, to, opt){
     } else {
 	endObject.shape = to.yourself();
     }
-    /**
-     * Constraint solver.
-     * @private
-     * @type ConstraintSolver
-     */
-    this.csolver = new ConstraintSolver();
-    // has to be set after shapes assignment and option processing
-    this.setConstraintSolver(this.csolver);
-
     // to be able to dispatch events in Raphael element attr method
     // TODO: possible source of memory leaks!!!
     this.addJoint(startObject.shape);
@@ -572,15 +289,13 @@ Joint.prototype = {
     /*
      * Getters.
      */
-    connection: function(){ return this._con; },
+    connection: function(){ return this.dom.connection; },
     endObject: function(){ return this._end.shape; },
     startObject: function(){ return this._start.shape; },
-    endCap: function(){ return this._endCap; },
+    endCap: function(){ return this.dom.endCap; },
     endCapConnected: function(){ return !this._end.dummy; },
-    startCap: function(){ return this._startCap; },
+    startCap: function(){ return this.dom.startCap; },
     startCapConnected: function(){ return !this._start.dummy; },
-    isStartCap: function(cap){ return (cap === this.startCap()) ? true : false; },
-    isEndCap: function(cap){ return (cap === this.endCap()) ? true : false; },
     isStartDummy: function(){ return this._start.dummy; },
     isEndDummy: function(){ return this._end.dummy; },
     /**
@@ -613,11 +328,12 @@ Joint.prototype = {
      * @param {Point} p
      */
     objectContainingPoint: function(p){
-	for (var i = this._registeredObjects.length - 1; i >= 0; --i){
-	    var o = this._registeredObjects[i].yourself();
-	    if (rect(o.getBBox()).containsPoint(p)){
+	var register = this._registeredObjects, 
+	    idx = (register ? register.length : 0), o;
+	while (idx--){
+	    o = register[idx].yourself();
+	    if (rect(o.getBBox()).containsPoint(p))
 		return o;
-	    }
 	}
 	return null;
     },
@@ -638,13 +354,7 @@ Joint.prototype = {
      * @param {RaphaelObject} obj
      */
     addJoint: function(obj){
-	var joints;
-	if (!obj.joints){
-	    console.log("!obj.joints WHICH IS WRONG");
-	    obj._joints = [];
-	    obj.joints = function(){ return this._joints; };
-	}
-	joints = obj.joints();
+	var joints = obj.joints();;
 	// push the Joint object into obj.joints array
 	// but only if obj.joints already doesn't have that Joint object
 	if (joints.indexOf(this) === -1) joints.push(this);
@@ -660,16 +370,16 @@ Joint.prototype = {
 	this._dx = e.clientX;
 	this._dy = e.clientY;
 
-	if (this.isStartCap(cap)){
+	if (cap === this.dom.startCap){
 	    if (!this.isStartDummy()){
 		this._lastStartCapSticker = this.startObject();
-		this.draw().dummyStart();
+		this.draw(["dummyStart"]);
 	    }
 	    this.state = this.STARTCAPDRAGGING;
-	} else if (this.isEndCap(cap)){
+	} else if (cap === this.dom.endCap){
 	    if (!this.isEndDummy()){
 		this._lastEndCapSticker = this.endObject();
-		this.draw().dummyEnd();
+		this.draw(["dummyEnd"]);
 	    }
 	    this.state = this.ENDCAPDRAGGING;
 	}
@@ -770,8 +480,8 @@ Joint.prototype = {
 //	enqueue(function(){self.redraw().listenAll();});
     },
     redraw: function(){
-	this.clean().connection().startCap().endCap().handleStart().handleEnd().label();
-	this.draw().connection().startCap().endCap().handleStart().handleEnd().label();
+	this.clean(["connection", "startCap", "endCap", "handleStart", "handleEnd", "label"]);
+	this.draw(["connection", "startCap", "endCap", "handleStart", "handleEnd", "label"]);
 	return this;
     },
     listenAll: function(){
@@ -779,204 +489,191 @@ Joint.prototype = {
 	    return this;
 	}
 	var self = this;
-	Joint.addEvent(this.startCap().node, "mousedown", function(e){ 
-			   self.capMouseDown(e, self.startCap());
+	this.dom.startCap.mousedown(function(e){ 
+		           Joint.fixEvent(e);
+			   self.capMouseDown(e, self.dom.startCap);
 			   e.stopPropagation();
 			   e.preventDefault();
-		       });
+        });
+	this.dom.endCap.mousedown(function(e){ 
+		           Joint.fixEvent(e);
+			   self.capMouseDown(e, self.dom.endCap);
+			   e.stopPropagation();
+			   e.preventDefault();
+	});
+	this.dom.connection.mousedown(function(e){
+		           Joint.fixEvent(e);
+			   self.connectionMouseDown(e); 
+			   e.stopPropagation();
+			   e.preventDefault();
+        });
 	if (this._opt.handle.start.enabled){
-	    Joint.addEvent(this._startHandle.node, "mousedown", function(e){ 
-			       self.capMouseDown(e, self.startCap());
+	    this.dom.handleStart.mousedown(function(e){ 
+			       Joint.fixEvent(e);
+			       self.capMouseDown(e, self.dom.startCap);
 			       e.stopPropagation();
 			       e.preventDefault();
-			   });
+	    });
 	}
 	if (this._opt.handle.end.enabled){
-	    Joint.addEvent(this._endHandle.node, "mousedown", function(e){ 
-			       self.capMouseDown(e, self.endCap());
+	    this.dom.handleEnd.mousedown(function(e){ 
+			       Joint.fixEvent(e);
+			       self.capMouseDown(e, self.dom.endCap);
 			       e.stopPropagation();
 			       e.preventDefault();
-			   });
+	    });
 	}
 	if (this._opt.handle.timeout !== Infinity){
-	    Joint.addEvent(this.connection().node, "mouseover", function(e){ 
+	    this.dom.connection.mouseover(function(e){ 
+			       Joint.fixEvent(e);
 			       self.showHandle();
 			       setTimeout(function(){
 					      self.hideHandle();
 					  }, self._opt.handle.timeout);
 			       e.stopPropagation();
 			       e.preventDefault();
-			   });
+	    });
 	}
-	Joint.addEvent(this.endCap().node, "mousedown", function(e){ 
-			   self.capMouseDown(e, self.endCap());
-			   e.stopPropagation();
-			   e.preventDefault();
-		       });
-	Joint.addEvent(this.connection().node, "mousedown", function(e){
-			   self.connectionMouseDown(e); 
-			   e.stopPropagation();
-			   e.preventDefault();
-		       });
 	return this;
     },
     /**
-     * This is the beginning of every drawing.
-     * Prepares parameters for drawing objects.
-     * Defines primitives for drawing.
-     * Draw functions (not primitives) store the resulting DOM element 
-     * into self._con, self._startCap, self._endCap, self._labelText and self._labelBox respectively.
-     * Draw functions support chaining.
-     *
-     * @todo for better performance, get primitives out of draw() method, otherwise
-     * they will be created each time draw() method is called.
      * @private
      */
-    draw: function(){
-	var 
-	self = this,
-	csolver = this.csolver,
-	paper = this.paper;
+    boundPoint: function(bbox, type, p){
+	if (type === "circle" || type === "ellipse")
+	    return ellipse(bbox.center(), bbox.width/2, bbox.height/2).intersectionWithLineFromCenterToPoint(p);
+	return bbox.boundPoint(p) || bbox.center();    
+    },
+    /**
+     * @private
+     * @param {object} start
+     * @param {rect} start.bbox Start object bounding box.
+     * @param {string} start.type Start object geometrical type.
+     * @param {point} start.shift Start arrow offsets.
+     * @param {object} end
+     * @param {rect} end.bbox End object bounding box.
+     * @param {string} end.type End object geometrical type.
+     * @param {point} end.shift End arrow offsets.
+     * @param {array} vertices Connection vertices.
+     * @return {object} Object containing location of start/end of the joint.
+     */
+    jointLocation: function(start, end, vertices){
+	var verticesLength = vertices.length, theta,
+        firstVertex = (vertices.length ? vertices[0] : undefined),
+        lastVertex = (vertices.length ? vertices[verticesLength - 1] : undefined),
+        p1, p1bp, c1t, c1r, p2, p2bp, c2t, c2r;
 
-	// set contraint solver
-	this.setConstraintSolver(csolver);
-	// invalidate contraint solver
-	// @todo invalidation must be done elsewhere
-	// and must invalidate only specific variables
-	csolver.invalidate();
+	// start object boundary point
+	p1bp = this.boundPoint(start.bbox, start.type, firstVertex || end.bbox.center());
+	// shift
+	theta = start.bbox.center().theta(firstVertex || end.bbox.center());
+	// first point of the connection
+	p1 = point(p1bp.x + (2 * start.shift.dx * cos(theta.radians)),
+		   p1bp.y + (-2 * start.shift.dy * sin(theta.radians)));
+	// start arrow translation 
+	c1t = point(p1bp.x + start.shift.dx * cos(theta.radians),
+		    p1bp.y - start.shift.dy * sin(theta.radians));
+	// start arrow rotation 
+	c1r = 360 - theta.degrees + 180;
 
-	return {
-	    dummy: function(startOrEnd, pos, opt){
-		startOrEnd.dummy = true;
-		startOrEnd.shape = paper.circle(pos.x, pos.y, opt.radius).attr(opt.attrs);
-		startOrEnd.shape.show();
-		return this;
-	    },
-	    dummyStart: function(){
-		return this.dummy(self._start, csolver.sBoundPoint(), self._opt.dummy.start);
-	    },
-	    dummyEnd: function(){
-		return this.dummy(self._end, csolver.eBoundPoint(), self._opt.dummy.end);
-	    },
-	    handleStart: function(){
-		var opt = self._opt.handle.start;
-		if (!opt.enabled){
-		    return this;
-		}
-		var pos = csolver.sBoundPoint();
-		self._startHandle = paper.circle(pos.x, pos.y, opt.radius).attr(opt.attrs);
-		return this;
-	    },
-	    handleEnd: function(){
-		var opt = self._opt.handle.end;
-		if (!opt.enabled){
-		    return this;
-		}
-		var pos = csolver.eBoundPoint();
-		self._endHandle = paper.circle(pos.x, pos.y, opt.radius).attr(opt.attrs);
-		return this;
-	    },
-	    connection: function(){
-		var opt = self._opt;
-		self._con = paper.path(csolver.conPathCommands().join(" ")).attr(opt.attrs);
-		var con = self._con;
-		con.node.style.cursor = opt.cursor;	
-		//	   self._con.toBack();
-		con.show();
-		return this;
-	    },
-	    label: function(){
-		if (self._opt.label === undefined){ 
-		    return this; 
-		}
-		var pos = csolver.labelPoint();
-		self._labelText = paper.text(pos.x, pos.y, self._opt.label);
-		var bb = self._labelText.getBBox();
-		self._labelBox = paper.rect(bb.x, bb.y, bb.width, bb.height).attr(self._opt.labelBoxAttrs);
-		self._labelText.insertAfter(self._labelBox);
-		return this;
-	    },
-	    transStartCap: function(){
-		var 
-		opt = self._opt.arrow.start,
-		sBoundPoint = csolver.sBoundPoint(),
-		sTheta = csolver.sTheta();
+	// end object boundary point
+	p2bp = this.boundPoint(end.bbox, end.type, lastVertex || start.bbox.center());
+	// shift
+	theta = (lastVertex || start.bbox.center()).theta(end.bbox.center());
+	// last point of the connection
+	p2 = point(p2bp.x + (-2 * end.shift.dx * cos(theta.radians)),
+		   p2bp.y + (2 * end.shift.dy * sin(theta.radians)));
+	// end arrow translation 
+	c2t = point(p2bp.x - end.shift.dx * cos(theta.radians),
+	            p2bp.y + end.shift.dy * sin(theta.radians));
+	// end arrow rotation 
+	c2r = 360 - theta.degrees;
 
-		if (!self._startCap){
-		    this.startCap();
-		} else {
-		    var 
-		    startCap = self._startCap,
-		    csm = csolverMemento,
-		    rotNew = 360 - sTheta.degrees + 180,
-		    rotOld = 360 - csm.sTheta.degrees + 180,
-		    trNewX = sBoundPoint.x + (opt.dx * cos(sTheta.radians)),
-		    trNewY = sBoundPoint.y - (opt.dy * sin(sTheta.radians)),
-		    trOldX = csm.sBoundPoint.x + (opt.dx * cos(csm.sTheta.radians)),
-		    trOldY = csm.sBoundPoint.y - (opt.dy * sin(csm.sTheta.radians));
-
-		    if (!csm.empty){
-			startCap.translate(trNewX - trOldX, trNewY - trOldY);
-			startCap.rotate(rotNew - rotOld);
-		    } // else no change
-		}
-		return this;
+	return { 
+	    start: {
+		bound: p1bp,
+		connection: p1,
+		translate: c1t,
+		rotate: c1r
 	    },
-	    transEndCap: function(){
-		var 
-		opt = self._opt.arrow.end,
-		eBoundPoint = csolver.eBoundPoint(),
-		eTheta = csolver.eTheta();
-
-		if (!self._endCap){
-		    this.endCap();
-		} else {
-		    var 
-		    endCap = self._endCap,
-		    csm = csolverMemento,
-		    rotNew = 360 - eTheta.degrees + 180,
-		    rotOld = 360 - csm.eTheta.degrees + 180,
-		    trNewX = eBoundPoint.x - (opt.dx * cos(eTheta.radians)),
-		    trNewY = eBoundPoint.y + (opt.dy * sin(eTheta.radians)),
-		    trOldX = csm.eBoundPoint.x - (opt.dx * cos(csm.eTheta.radians)),
-		    trOldY = csm.eBoundPoint.y + (opt.dy * sin(csm.eTheta.radians));
-
-		    if (!csm.empty){
-			endCap.translate(trNewX - trOldX, trNewY - trOldY);
-			endCap.rotate(rotNew - rotOld);
-		    } // else no change
-		}
-		return this;
-	    },
-	    startCap: function(){
-		var 
-		opt = self._opt.arrow.start,
-		sBoundPoint = csolver.sBoundPoint(),
-		sTheta = csolver.sTheta();
-
-		self._startCap = paper.path(opt.path.join(" ")).attr(opt.attrs);
-		var startCap = self._startCap;
-		startCap.translate(sBoundPoint.x + (opt.dx * cos(sTheta.radians)), 
-				   sBoundPoint.y - (opt.dy * sin(sTheta.radians)));
-		startCap.rotate(360 - (sTheta.degrees) + 180);
-		startCap.show();
-		return this;
-	    },
-	    endCap: function(){
-		var 
-		opt = self._opt.arrow.end,
-		eBoundPoint = csolver.eBoundPoint(),
-		eTheta = csolver.eTheta();
-
-		self._endCap = paper.path(opt.path.join(" ")).attr(opt.attrs);
-		var endCap = self._endCap;
-		endCap.translate(eBoundPoint.x - (opt.dx * cos(eTheta.radians)), 
-				 eBoundPoint.y + (opt.dy * sin(eTheta.radians)));
-		endCap.rotate(360 - (eTheta.degrees));
-		endCap.show();
-		return this;
+	    end: {
+		bound: p2bp,
+		connection: p2,
+		translate: c2t,
+		rotate: c2r
 	    }
 	};
+    },
+    /**
+     * @private
+     * @param {point} start Joint start location.
+     * @param {point} end Joint end location.
+     * @param {array} vertices Connection vertices.
+     * @param {boolean} smooth Connection smooth flag.
+     * @return {array} SVG path commands.
+     */
+    connectionPathCommands: function(start, end, vertices, smooth){
+	if (smooth)
+	    return Bezier.curveThroughPoints([start].concat(vertices, [end]));
+	var commands = ["M", start.x, start.y], i = 0, l = vertices.length;
+	for (; i < l; i++)
+	    commands.push("L", vertices[i].x, vertices[i].y);
+	commands.push("L", end.x, end.y);
+	return commands;
+    },
+
+    /**
+     * @private
+     * @param {point} start Joint start location.
+     * @param {point} end Joint end location.
+     * @param {array} vertices Connection vertices.
+     * @return {point} Location of the label.
+     */
+    labelLocation: function(start, end, vertices){
+	var p = start, i = 0, l = vertices.length;
+	for (; i < l; i++)
+	    p = line(p, vertices[i]).midpoint();
+	return line(p, end).midpoint();
+    },
+
+    /**
+     * @private
+     */
+    draw: function(components){
+	var self = this,
+	    paper = this.paper,
+	    jointLocation = this.jointLocation(
+		{
+		    bbox: rect(this.startObject().getBBox()).moveAndExpand(this._opt.bboxCorrection.start), 
+		    type: this.startObject().type,
+		    shift: this._opt.arrow.start
+		},
+		{
+		    bbox: rect(this.endObject().getBBox()).moveAndExpand(this._opt.bboxCorrection.end), 
+		    type: this.endObject().type,
+		    shift: this._opt.arrow.end
+		},
+		this._opt.vertices
+	    ),
+            connectionPathCommands = this.connectionPathCommands(
+		jointLocation.start.connection,
+		jointLocation.end.connection,
+		this._opt.vertices,
+		this._opt.beSmooth
+	    ),
+	    labelLocation = this.labelLocation(
+		jointLocation.start.connection,
+		jointLocation.end.connection,
+		this._opt.vertices
+	    ),
+	    dom = JointDOMBuilder.init(this.paper, this._opt, this._start, this._end, jointLocation, connectionPathCommands, labelLocation),
+	    l = components.length,
+	    component;
+
+	for (var i = 0; i < l; i++){
+	    component = components[i];
+	    this.dom[component] = dom[component]();
+	}
     },
     /**
      * Clean operations. 
@@ -984,86 +681,27 @@ Joint.prototype = {
      * Clean operations support chaining.
      * @private
      */
-    clean: function(){
-	var self = this;
-	return {
-	    connection: function(){ 
-		var con = self._con;
-		if (con){ con.remove(); }
-		return this;
-	    },
-	    startCap: function(){
-		var startCap = self._startCap;
-		if (startCap){ startCap.remove(); }
-		return this;
-	    },
-	    endCap: function(){ 
-		var endCap = self._endCap;
-		if (endCap){ endCap.remove(); }
-		return this;
-	    },
-	    label: function(){
-		var 
-		labelBox = self._labelBox,
-		labelText = self._labelText;
-		if (labelBox){ labelBox.remove(); }
-		if (labelText){ labelText.remove(); }
-		return this;
-	    },
-	    dummyEnd: function(){
-		var end = self._end;
-		if (end.dummy && end.shape){
-		    end.shape.remove();
+    clean: function(components){
+	var component, name, subComponents, idx = components.length;
+	while (idx--){
+	    name = components[idx];
+	    component = this.dom[name];
+	    if (component){
+		if (component.node){
+		    component.remove();
+		    this.dom[name] = null;
+		} else {  // component is a composite object
+		    subComponents = component;
+		    for (var key in subComponents){
+			if (subComponents.hasOwnProperty(key))
+			    subComponents[key].remove();
+		    }
 		}
-		return this;
-	    },
-	    dummyStart: function(){
-		var start = self._start;
-		if (start.dummy && start.shape){
-		    start.shape.remove();
-		}
-		return this;
-	    },
-	    handleStart: function(){
-		var startHandle = self._startHandle;
-		if (startHandle){
-		    startHandle.remove();
-		}
-		return this;
-	    },
-	    handleEnd: function(){
-		var endHandle = self._endHandle;
-		if (endHandle){
-		    endHandle.remove();
-		}
-		return this;
+		this.dom[name] = null;
 	    }
-	};
+	}
     },
 
-    setConstraintSolver: function(csolver){
-	if (this._start.shape){
-	    csolver._startShapeBBox = this._start.shape.getBBox();
-	    csolver._startShapeType = this._start.shape.type;
-	} else {
-	    csolver._startShapeBBox = {x: 0, y: 0, width: 0, height: 0};
-	    csolver._startShapeType = "rect";
-	}
-	if (this._end.shape){
-	    csolver._endShapeBBox = this._end.shape.getBBox();
-	    csolver._endShapeType = this._end.shape.type;
-	} else {
-	    csolver._endShapeBBox = {x: 0, y: 0, width: 0, height: 0};
-	    csolver._endShapeType = "rect";
-	}
-
-	csolver._conVertices = this._opt.vertices;
-	csolver._arrowStartShift = {dx: this._opt.arrow.start.dx, dy: this._opt.arrow.start.dy};
-	csolver._arrowEndShift = {dx: this._opt.arrow.end.dx, dy: this._opt.arrow.end.dy};
-	csolver._bboxCorrection = this._opt.bboxCorrection;
-	csolver._flags.smooth = this._opt.beSmooth;
-	csolver._flags.label = (this._opt.label !== undefined);    
-    },
     /**
      * Process options.
      * @private
@@ -1287,7 +925,7 @@ Joint.prototype = {
      * @return {Joint}
      */
     straighten: function(){
-	this._con.remove();
+	this.connnection().remove();
 	this._opt.vertices = [];
 	this.update();
 	return this;
@@ -1644,6 +1282,77 @@ Joint.removeEvent = function(element, type, handler){
 Joint.addEvent(document, "mousemove", Joint.mouseMove);
 Joint.addEvent(document, "mouseup", Joint.mouseUp);
 
+var JointDOMBuilder = {
+    init: function(paper, opt, start, end, jointLocation, connectionPathCommands, labelLocation){
+	this.paper = paper;
+	this.opt = opt;
+	this.start = start;
+	this.end = end;
+	this.jointLocation = jointLocation;
+	this.connectionPathCommands = connectionPathCommands;
+	this.labelLocation = labelLocation;
+	return this;
+    },
+    dummy: function(startOrEnd, pos, opt){
+	startOrEnd.dummy = true;
+	startOrEnd.shape = this.paper.circle(pos.x, pos.y, opt.radius).attr(opt.attrs);
+	startOrEnd.shape.show();
+	return startOrEnd.shape;
+    },
+    dummyStart: function(){
+	return this.dummy(this.start, this.jointLocation.start.bound, this.opt.dummy.start);
+    },
+    dummyEnd: function(){
+	return this.dummy(this.end, this.jointLocation.end.bound, this.opt.dummy.end);
+    },
+    handleStart: function(){
+	var opt = this.opt.handle.start;
+	if (!opt.enabled) return undefined;
+	var pos = this.jointLocation.start.bound;
+	return this.paper.circle(pos.x, pos.y, opt.radius).attr(opt.attrs);
+    },
+    handleEnd: function(){
+	var opt = this.opt.handle.end;
+	if (!opt.enabled) return undefined;
+	var pos = this.jointLocation.end.bound;
+	return this.paper.circle(pos.x, pos.y, opt.radius).attr(opt.attrs);
+    },
+    connection: function(){
+	var opt = this.opt,
+	    con = this.paper.path(this.connectionPathCommands.join(" ")).attr(opt.attrs);
+	con.node.style.cursor = opt.cursor;
+	con.show();
+	return con;
+    },
+    label: function(){
+	if (this.opt.label === undefined) return undefined; 
+	var pos = this.labelLocation,
+	    labelText = this.paper.text(pos.x, pos.y, this.opt.label),
+	    bb = labelText.getBBox(),
+	    labelBox = this.paper.rect(bb.x, bb.y, bb.width, bb.height).attr(this.opt.labelBoxAttrs);
+	labelText.insertAfter(labelBox);
+	return { text: labelText, box: labelBox };
+    },
+    startCap: function(){
+	var opt = this.opt.arrow.start,
+	    startCap = this.paper.path(opt.path.join(" ")).attr(opt.attrs);
+	startCap.translate(this.jointLocation.start.translate.x, 
+			   this.jointLocation.start.translate.y);
+	startCap.rotate(this.jointLocation.start.rotate);
+	startCap.show();
+	return startCap;
+    },
+    endCap: function(){
+	var opt = this.opt.arrow.end,
+	    endCap = this.paper.path(opt.path.join(" ")).attr(opt.attrs);
+	endCap.translate(this.jointLocation.end.translate.x, 
+			 this.jointLocation.end.translate.y);
+	endCap.rotate(this.jointLocation.end.rotate);
+	endCap.show();
+	return endCap;
+    }
+};
+
 /**
  * Geometry-Primitives.
  */
@@ -1753,12 +1462,12 @@ Line.prototype = {
     },
 
     /**
-     * @return <double> length of the line
+     * @return {double} length of the line
      */
     length: function(){ return sqrt(this.squaredLength()); },
 
     /**
-     * @return <integer> length without sqrt
+     * @return {integer} length without sqrt
      * @note for applications where the exact length is not necessary (e.g. compare only)
      */
     squaredLength: function(){
@@ -1769,7 +1478,7 @@ Line.prototype = {
     },
 
     /**
-     * @return <point> my midpoint 
+     * @return {point} my midpoint 
      */
     midpoint: function(){
 	return point((this.start.x + this.end.x) / 2,
@@ -1778,7 +1487,7 @@ Line.prototype = {
 
 
     /**
-     * @return <point> where I intersect l.
+     * @return {point} where I intersect l.
      * @see Squeak Smalltalk, LineSegment>>intersectionWith:
      */
     intersection: function(l){
@@ -1843,7 +1552,7 @@ Rect.prototype = {
     center: function(){ return point(this.x + this.width/2, this.y + this.height/2); },
 
     /**
-     * @return <bool> true if rectangles intersect
+     * @return {boolean} true if rectangles intersect
      */
     intersect: function(r){
 	var myOrigin = this.origin(),
@@ -1858,7 +1567,7 @@ Rect.prototype = {
     },
 
     /**
-     * @return <string> (left|right|top|bottom) side which is nearest to point
+     * @return {string} (left|right|top|bottom) side which is nearest to point
      * @see Squeak Smalltalk, Rectangle>>sideNearestTo:
      */
     sideNearestToPoint: function(p){
@@ -1884,7 +1593,7 @@ Rect.prototype = {
     },
 
     /**
-     * @return <bool> true if point p is insight me
+     * @return {bool} true if point p is insight me
      */
     containsPoint: function(p){
 	if (p.x > this.x && p.x < this.x + this.width &&
@@ -1895,7 +1604,7 @@ Rect.prototype = {
     },
 
     /**
-     * @return <point> a point on my border nearest to parameter point
+     * @return {point} a point on my border nearest to parameter point
      * @see Squeak Smalltalk, Rectangle>>pointNearestTo:
      */
     pointNearestToPoint: function(p){
@@ -1937,7 +1646,7 @@ Rect.prototype = {
 
     /**
      * Move and expand me.
-     * @param r <rectangle> representing deltas
+     * @param r {rectangle} representing deltas
      */
     moveAndExpand: function(r){
 	this.x += r.x;
@@ -2290,7 +1999,9 @@ Joint.Bezier = Bezier;
 var _attr = global.Raphael.el.attr;
 global.Raphael.el.attr = function(){
     // is it a getter or el is not a joint object?
-    if ((arguments.length == 1 && (typeof arguments[0] === "string" || typeof arguments[0] === "array")) || (typeof this.joints === "undefined")){
+    if ((arguments.length == 1 && 
+	 (typeof arguments[0] === "string" || typeof arguments[0] === "array")) || 
+	(typeof this.joints === "undefined")){
 	return _attr.apply(this, arguments);	// yes
     }
 
@@ -2350,6 +2061,10 @@ global.Raphael.el.euid = function(){
 
 global.Raphael.el.yourself = function(){
     return this;
+};
+
+global.Raphael.el.joints = function(){
+    return (this._joints || (this._joints = []));
 };
 
 })(this);	// END CLOSURE

@@ -51,7 +51,7 @@ var dia = Joint.dia = {
      * @return {Element[]} Array of registered elements.
      */
     registeredElements: function(){
-	return dia._registeredObjects[Joint.paper()];
+	return (this._registeredObjects[Joint.paper()] || (this._registeredObjects[Joint.paper()] = []));
     },
     /**
      * Register object to the current paper.
@@ -60,16 +60,15 @@ var dia = Joint.dia = {
      * @return {Element|Joint} Registered object.
      */
     register: function(obj){
-	var paper = Joint.paper();
-	(this._registeredObjects[paper] || (this._registeredObjects[paper] = [])).push(obj);
+	(this._registeredObjects[Joint.paper()] || (this._registeredObjects[Joint.paper()] = [])).push(obj);
     },
     /**
      * Cancel registration of an element in the current paper.
      * @param {Element} obj Object to be unregistered.
      */
     unregister: function(obj){
-	var paper = Joint.paper(),
-	    register = (this._registeredObjects[paper] || (this._registeredObjects[paper] = [])), idx = register.length;
+	var register = (this._registeredObjects[Joint.paper()] || (this._registeredObjects[Joint.paper()] = [])), 
+	    idx = register.length;
 	while (idx--)
 	    if (register[idx] === obj)
 		register.splice(idx, 1);
@@ -80,16 +79,15 @@ var dia = Joint.dia = {
      * @param {Joint}
      */
     registerJoint: function(j){
-	var paper = Joint.paper();
-	(this._registeredJoints[paper] || (this._registeredJoints[paper] = [])).push(j);	
+	(this._registeredJoints[Joint.paper()] || (this._registeredJoints[Joint.paper()] = [])).push(j);
     },
     /**
      * Cancel registration of a joint in the current paper.
      * @param {Joint} j Joint to be unregistered.
      */
     unregisterJoint: function(j){
-	var paper = Joint.paper(),
-	    register = (this._registeredJoints[paper] || (this._registeredJoints[paper] = [])), idx = register.length;
+	var register = (this._registeredJoints[Joint.paper()] || (this._registeredJoints[Joint.paper()] = [])),
+	    idx = register.length;
 	while (idx--)
 	    if (register[idx] === j)
 		register.splice(idx, 1);
@@ -617,12 +615,12 @@ Element.prototype = {
 	    
 	    if (j.endObject().wholeShape === this){
 		j.freeJoint(j.endObject());
-		j.draw().dummyEnd();
+		j.draw(["dummyEnd"]);
 		j.update();
 	    }
 	    if (j.startObject().wholeShape === this){
 		j.freeJoint(j.startObject());
-		j.draw().dummyStart();
+		j.draw(["dummyStart"]);
 		j.update();
 	    }
 	}
