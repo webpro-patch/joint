@@ -50,6 +50,7 @@ if (!Array.indexOf){
  * @param {string} [opts.cursor] Connection CSS cursor property
  * @param {boolean} [opts.beSmooth] Connection enable/disable smoothing
  * @param {string} [opts.label] Connection label 
+ * @param {object} [opts.labelAttrs] Label options (see  Raphael possible parameters)
  * @param {object} [opts.labelBoxAttrs] SVG Attributes of the label bounding rectangle.
  * @param {object} [opts.startArrow] Start arrow options
  * @param {string} [opts.startArrow.type] "none"|"basic"
@@ -168,6 +169,10 @@ function Joint(from, to, opt){
 	beSmooth: false,// be a smooth line? (bezier curve aproximation)
 	interactive: true, // is the connection interactive? 
 	label: undefined,
+	labelAttrs: {
+	    "font-size": 12,
+	    "fill": "#000"
+	},
 	labelBoxAttrs: {stroke: "white", fill: "white"},
 	// bounding box correction 
 	// (useful when the connection should start in the center of an object, etc...)
@@ -398,13 +403,12 @@ Joint.prototype = {
 	// new vertices can be added CORRECTLY only at the end
 	// or at the start of the connection
 	// -> @todo 
-	var 
-	sbbCenter = rect(this.startObject().getBBox()).center(),
-	ebbCenter = rect(this.endObject().getBBox()).center(),
-	// squared lengths of the lines from the center of 
-	// start/end object bbox to the mouse position
-	smLineSqrLen = line(sbbCenter, mousePos).squaredLength(),
-	emLineSqrLen = line(ebbCenter, mousePos).squaredLength();
+	var sbbCenter = rect(this.startObject().getBBox()).center(),
+	    ebbCenter = rect(this.endObject().getBBox()).center(),
+	    // squared lengths of the lines from the center of 
+	    // start/end object bbox to the mouse position
+	    smLineSqrLen = line(sbbCenter, mousePos).squaredLength(),
+	    emLineSqrLen = line(ebbCenter, mousePos).squaredLength();
 	if (smLineSqrLen < emLineSqrLen){
 	    // new vertex is added to the beginning of the vertex array
 	    this._conVerticesCurrentIndex = 0;
@@ -709,6 +713,11 @@ Joint.prototype = {
 	if (opt.cursor)   this._opt.cursor = opt.cursor;
 	if (opt.beSmooth) this._opt.beSmooth = opt.beSmooth;
 	if (opt.label)    this._opt.label = opt.label;
+	if (opt.labelAttrs){
+	    for (key in opt.labelAttrs){
+		this._opt.labelAttrs[key] = opt.labelAttrs[key];
+	    }
+	}
 	if (opt.vertices){
 	    // cast vertices to points
 	    for (var i = 0, l = opt.vertices.length; i < l; i++){
@@ -1318,7 +1327,7 @@ var JointDOMBuilder = {
     label: function(){
 	if (this.opt.label === undefined) return undefined; 
 	var pos = this.labelLocation,
-	    labelText = this.paper.text(pos.x, pos.y, this.opt.label),
+	    labelText = this.paper.text(pos.x, pos.y, this.opt.label).attr(this.opt.labelAttrs),
 	    bb = labelText.getBBox(),
 	    labelBox = this.paper.rect(bb.x, bb.y, bb.width, bb.height).attr(this.opt.labelBoxAttrs);
 	labelText.insertAfter(labelBox);
