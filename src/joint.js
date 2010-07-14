@@ -209,28 +209,19 @@ function Joint(from, to, opt){
     // options
     if (opt) this.processOptions(opt);
 
-    var 
-    startObject = this._start,
-    endObject = this._end;
+    var startObject = this._start,
+        endObject = this._end;
 
-    if (from.x && from.y){	// from is point?
-	// draw dummy start
-	var dummyStart = this._opt.dummy.start;
-	startObject.shape = paper.circle(from.x, from.y, dummyStart.radius).attr(dummyStart.attrs);
-	startObject.dummy = true;
-	startObject.shape.show();
-    } else {
+    if (from.x && from.y)	// from is point?
+	JointDOMBuilder.dummy(startObject, from, this._opt.dummy.start);
+    else
 	startObject.shape = from.yourself();
-    }
-    if (to.x && to.y){		// to is point?
-	// draw dummy end
-	var dummyEnd = this._opt.dummy.end;
-	endObject.shape = paper.circle(to.x, to.y, dummyEnd.radius).attr(dummyEnd.attrs);
-	endObject.dummy = true;
-	endObject.shape.show();
-    } else {
+
+    if (to.x && to.y)		// to is point?
+	JointDOMBuilder.dummy(endObject, to, this._opt.dummy.end);
+    else
 	endObject.shape = to.yourself();
-    }
+
     // to be able to dispatch events in Raphael element attr method
     // TODO: possible source of memory leaks!!!
     this.addJoint(startObject.shape);
