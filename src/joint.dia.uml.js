@@ -13,12 +13,12 @@ var uml = Joint.dia.uml = {};
 Joint.arrows.aggregation = function(size){
     return {
 	path: ["M","7","0","L","0","5","L","-7","0", "L", "0", "-5", "z"],
-	dx: 9, 
+	dx: 9,
 	dy: 9,
-	attrs: { 
-	    stroke: "black", 
-	    "stroke-width": 2.0, 
-	    fill: "black" 
+	attrs: {
+	    stroke: "black",
+	    "stroke-width": 2.0,
+	    fill: "black"
 	}
     };
 };
@@ -64,7 +64,7 @@ uml.generalizationArrow = {
  */
 uml.arrow = {
     startArrow: {type: "none"},
-    endArrow: {type: "basic", size: 5}, 
+    endArrow: {type: "basic", size: 5},
     attrs: {"stroke-dasharray": "none"}
 };
 
@@ -132,12 +132,12 @@ uml.State = Element.extend({
 	this.addInner(this.getActionsElement());
     },
     getLabelElement: function(){
-	var 
+	var
 	p = this.properties,
 	bb = this.wrapper.getBBox(),
 	t = this.paper.text(bb.x, bb.y, p.label),
 	tbb = t.getBBox();
-	t.translate(bb.x - tbb.x + p.labelOffsetX, 
+	t.translate(bb.x - tbb.x + p.labelOffsetX,
 		    bb.y - tbb.y + p.labelOffsetY);
 	return t;
     },
@@ -158,7 +158,7 @@ uml.State = Element.extend({
 	str = str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
 
 	// draw text with actions
-	var 
+	var
 	bb = this.wrapper.getBBox(),
 	t = this.paper.text(bb.x + p.actionsOffsetX, bb.y + p.labelOffsetY + p.swimlaneOffsetY + p.actionsOffsetY, str),
 	tbb = t.getBBox();
@@ -339,7 +339,7 @@ uml.Class = Element.extend({
 	return this.paper.path(["M", bb.x, bb.y + p.labelOffsetY + p.swimlane1OffsetY, "L", bb.x + bb.width, bb.y + p.labelOffsetY + p.swimlane1OffsetY].join(" "));
     },
     getSwimlane2Element: function(){
-	var 
+	var
 	p = this.properties,
 	bb = this.wrapper.getBBox(),
 	bbAtrrs = this.inner[2].getBBox();  // attributes
@@ -352,7 +352,7 @@ uml.Class = Element.extend({
 	}
 	// trim
 	str = str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
-    
+
 	var
 	bb = this.wrapper.getBBox(),
 	t = this.paper.text(bb.x + p.attributesOffsetX, bb.y + p.labelOffsetY + p.swimlane1OffsetY + p.attributesOffsetY, str),
@@ -388,7 +388,7 @@ uml.Class = Element.extend({
 	this.inner[2] = this.getAttributesElement();
 	this.inner[3] = this.getSwimlane2Element();
 	this.inner[4] = this.getMethodsElement();
-    }			       
+    }
 });
 
 })(this);	// END CLOSURE

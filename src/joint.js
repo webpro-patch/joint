@@ -1,6 +1,6 @@
 (function(global){	// BEGIN CLOSURE
 
-var 
+var
 math = global.Math,
 cos = math.cos,
 sin = math.sin,
@@ -11,8 +11,8 @@ atan2 = math.atan2,
 acos = math.acos,
 PI = math.PI;
 
-var enqueue = function(fnc){ 
-    setTimeout(fnc, 0); 
+var enqueue = function(fnc){
+    setTimeout(fnc, 0);
 };
 
 if (!global.console){
@@ -49,7 +49,7 @@ if (!Array.indexOf){
  * @param {object} [opts.attrs] Connection options (see  Raphael possible parameters)
  * @param {string} [opts.cursor] Connection CSS cursor property
  * @param {boolean} [opts.beSmooth] Connection enable/disable smoothing
- * @param {string} [opts.label] Connection label 
+ * @param {string} [opts.label] Connection label
  * @param {object} [opts.labelAttrs] Label options (see  Raphael possible parameters)
  * @param {object} [opts.labelBoxAttrs] SVG Attributes of the label bounding rectangle.
  * @param {object} [opts.startArrow] Start arrow options
@@ -121,7 +121,7 @@ if (!Array.indexOf){
  *  }
  * });
  */
-function Joint(from, to, opt){ 
+function Joint(from, to, opt){
     if (!(this instanceof Joint)){
 	return new Joint(from, to, opt);
     }
@@ -145,11 +145,11 @@ function Joint(from, to, opt){
     this._start = { // start object
 	shape: null,		// Raphael object
 	dummy: false		// is it a dummy object?
-    };		
+    };
     this._end = { // end object
 	shape: null,		// Raphael object
 	dummy: false		// is it a dummy object?
-    };		
+    };
 
     // connection options
     this._opt = {
@@ -167,14 +167,14 @@ function Joint(from, to, opt){
 	},
 	cursor: "move",	// CSS cursor property
 	beSmooth: false,// be a smooth line? (bezier curve aproximation)
-	interactive: true, // is the connection interactive? 
+	interactive: true, // is the connection interactive?
 	label: undefined,
 	labelAttrs: {
 	    "font-size": 12,
 	    "fill": "#000"
 	},
 	labelBoxAttrs: {stroke: "white", fill: "white"},
-	// bounding box correction 
+	// bounding box correction
 	// (useful when the connection should start in the center of an object, etc...)
 	bboxCorrection: {
 	    start: { type: null, x: 0, y: 0, width: 0, height: 0 },
@@ -214,6 +214,8 @@ function Joint(from, to, opt){
     // options
     if (opt) this.processOptions(opt);
 
+    JointDOMBuilder.init(this.paper, this._opt, this._start, this._end);
+
     var startObject = this._start,
         endObject = this._end;
 
@@ -236,7 +238,7 @@ function Joint(from, to, opt){
 }
 global.Joint = Joint;	// the only global variable
 
-Joint.euid = 1;	// elements/joints unique id 
+Joint.euid = 1;	// elements/joints unique id
 /**
  * Assign unique id to this.
  * @private
@@ -268,7 +270,7 @@ Joint.prototype = {
      */
     _callbacks: {
 	// called when a joint has just connected to an object
-	// the object is accessed using this, 
+	// the object is accessed using this,
 	// the only argument is what side has been connected ("start" | "end")
 	justConnected: function(side){},
 	disconnected: function(side){},
@@ -301,7 +303,7 @@ Joint.prototype = {
      * @param {RaphaelObject} o
      */
     replaceDummy: function(startOrEnd, o){
-	// assert(startOrEnd.dummy == true)    
+	// assert(startOrEnd.dummy == true)
 	startOrEnd.shape.remove();
 	startOrEnd.dummy = false;
 	startOrEnd.shape = o;
@@ -324,7 +326,7 @@ Joint.prototype = {
      * @param {Point} p
      */
     objectContainingPoint: function(p){
-	var register = this._registeredObjects, 
+	var register = this._registeredObjects,
 	    idx = (register ? register.length : 0), o;
 	while (idx--){
 	    o = register[idx].yourself();
@@ -339,7 +341,7 @@ Joint.prototype = {
      * @param {StartObject|EndObject} obj
      */
     freeJoint: function(obj){
-	var jar = obj.shape ? obj.shape.joints() : obj.joints(),
+	var jar = obj.yourself().joints(),
 	    i = jar.indexOf(this);
 	jar.splice(i, 1);
 	return this;
@@ -402,10 +404,10 @@ Joint.prototype = {
 
 	// new vertices can be added CORRECTLY only at the end
 	// or at the start of the connection
-	// -> @todo 
+	// -> @todo
 	var sbbCenter = rect(this.startObject().getBBox()).center(),
 	    ebbCenter = rect(this.endObject().getBBox()).center(),
-	    // squared lengths of the lines from the center of 
+	    // squared lengths of the lines from the center of
 	    // start/end object bbox to the mouse position
 	    smLineSqrLen = line(sbbCenter, mousePos).squaredLength(),
 	    emLineSqrLen = line(ebbCenter, mousePos).squaredLength();
@@ -425,13 +427,13 @@ Joint.prototype = {
 	if (this.state === this.STARTCAPDRAGGING){
 	    this.startObject().translate(e.clientX - this._dx, e.clientY - this._dy);
 	} else if (this.state === this.ENDCAPDRAGGING) {
-	    this.endObject().translate(e.clientX - this._dx, e.clientY - this._dy);	
+	    this.endObject().translate(e.clientX - this._dx, e.clientY - this._dy);
 	} else {
 	    return;	// should not happen
 	}
 	this._dx = e.clientX;
 	this._dy = e.clientY;
-	
+
 	this.update();
     },
     capEndDragging: function(){
@@ -469,9 +471,9 @@ Joint.prototype = {
 	this.callback("wiring", this, [mousePos]);
     },
     update: function(){
-	this.redraw().listenAll();	
+	this.redraw().listenAll();
 	// setTimeout makes drawing much faster!
-//	var self = this; 
+//	var self = this;
 //	enqueue(function(){self.redraw().listenAll();});
     },
     redraw: function(){
@@ -484,13 +486,13 @@ Joint.prototype = {
 	    return this;
 	}
 	var self = this;
-	this.dom.startCap.mousedown(function(e){ 
+	this.dom.startCap.mousedown(function(e){
 		           Joint.fixEvent(e);
 			   self.capMouseDown(e, self.dom.startCap);
 			   e.stopPropagation();
 			   e.preventDefault();
         });
-	this.dom.endCap.mousedown(function(e){ 
+	this.dom.endCap.mousedown(function(e){
 		           Joint.fixEvent(e);
 			   self.capMouseDown(e, self.dom.endCap);
 			   e.stopPropagation();
@@ -498,12 +500,12 @@ Joint.prototype = {
 	});
 	this.dom.connection.mousedown(function(e){
 		           Joint.fixEvent(e);
-			   self.connectionMouseDown(e); 
+			   self.connectionMouseDown(e);
 			   e.stopPropagation();
 			   e.preventDefault();
         });
 	if (this._opt.handle.start.enabled){
-	    this.dom.handleStart.mousedown(function(e){ 
+	    this.dom.handleStart.mousedown(function(e){
 			       Joint.fixEvent(e);
 			       self.capMouseDown(e, self.dom.startCap);
 			       e.stopPropagation();
@@ -511,7 +513,7 @@ Joint.prototype = {
 	    });
 	}
 	if (this._opt.handle.end.enabled){
-	    this.dom.handleEnd.mousedown(function(e){ 
+	    this.dom.handleEnd.mousedown(function(e){
 			       Joint.fixEvent(e);
 			       self.capMouseDown(e, self.dom.endCap);
 			       e.stopPropagation();
@@ -519,7 +521,7 @@ Joint.prototype = {
 	    });
 	}
 	if (this._opt.handle.timeout !== Infinity){
-	    this.dom.connection.mouseover(function(e){ 
+	    this.dom.connection.mouseover(function(e){
 			       Joint.fixEvent(e);
 			       self.showHandle();
 			       setTimeout(function(){
@@ -537,7 +539,7 @@ Joint.prototype = {
     boundPoint: function(bbox, type, p){
 	if (type === "circle" || type === "ellipse")
 	    return ellipse(bbox.center(), bbox.width/2, bbox.height/2).intersectionWithLineFromCenterToPoint(p);
-	return bbox.boundPoint(p) || bbox.center();    
+	return bbox.boundPoint(p) || bbox.center();
     },
     /**
      * @private
@@ -565,10 +567,10 @@ Joint.prototype = {
 	// first point of the connection
 	p1 = point(p1bp.x + (2 * start.shift.dx * cos(theta.radians)),
 		   p1bp.y + (-2 * start.shift.dy * sin(theta.radians)));
-	// start arrow translation 
+	// start arrow translation
 	c1t = point(p1bp.x + start.shift.dx * cos(theta.radians),
 		    p1bp.y - start.shift.dy * sin(theta.radians));
-	// start arrow rotation 
+	// start arrow rotation
 	c1r = 360 - theta.degrees + 180;
 
 	// end object boundary point
@@ -578,13 +580,13 @@ Joint.prototype = {
 	// last point of the connection
 	p2 = point(p2bp.x + (-2 * end.shift.dx * cos(theta.radians)),
 		   p2bp.y + (2 * end.shift.dy * sin(theta.radians)));
-	// end arrow translation 
+	// end arrow translation
 	c2t = point(p2bp.x - end.shift.dx * cos(theta.radians),
 	            p2bp.y + end.shift.dy * sin(theta.radians));
-	// end arrow rotation 
+	// end arrow rotation
 	c2r = 360 - theta.degrees;
 
-	return { 
+	return {
 	    start: {
 		bound: p1bp,
 		connection: p1,
@@ -638,17 +640,17 @@ Joint.prototype = {
 	var self = this,
 	    paper = this.paper,
 	    jointLocation = this.jointLocation(
-		{
-		    bbox: rect(this.startObject().getBBox()).moveAndExpand(this._opt.bboxCorrection.start), 
+	        {
+	            bbox: rect(this.startObject().getBBox()).moveAndExpand(this._opt.bboxCorrection.start),
 		    type: this.startObject().type,
 		    shift: this._opt.arrow.start
-		},
-		{
-		    bbox: rect(this.endObject().getBBox()).moveAndExpand(this._opt.bboxCorrection.end), 
+	        },
+	        {
+	            bbox: rect(this.endObject().getBBox()).moveAndExpand(this._opt.bboxCorrection.end),
 		    type: this.endObject().type,
 		    shift: this._opt.arrow.end
-		},
-		this._opt.vertices
+	        },
+	        this._opt.vertices
 	    ),
             connectionPathCommands = this.connectionPathCommands(
 		jointLocation.start.connection,
@@ -671,7 +673,7 @@ Joint.prototype = {
 	}
     },
     /**
-     * Clean operations. 
+     * Clean operations.
      * Remove the DOM elements of connection/startCap/endCap/label if they exist.
      * Clean operations support chaining.
      * @private
@@ -809,20 +811,22 @@ Joint.prototype = {
 	return this;
     },
     /**
-     * The difference between register and registerForever is that registerForever 
-     * saves reference to an array passed as argument. It means that all objects pushed 
-     * into the array before and/or after the call of this method will be registered (for both caps). 
-     * This method is useful for applications that do not know to which objects the connection 
+     * The difference between register and registerForever is that registerForever
+     * saves reference to an array passed as argument. It means that all objects pushed
+     * into the array before and/or after the call of this method will be registered (for both caps).
+     * This method is useful for applications that do not know to which objects the connection
      * can be sticked when the joint is created.
-     * @param {Array} An array holding objects which the joint is going to be registered to.
+     * @param {Array|arg1, arg2, ...} An array holding objects which the joint is going to be registered to.
      * @return {Joint}
-     * @example 
-     * var all = []; 
-     * j.registerForever(all);  
+     * @example
+     * var all = [];
+     * j.registerForever(all);
      * // ... create objects and push them into all array
      */
     registerForever: function(arr){
-	this._registeredObjects = arr;	
+        if (Object.prototype.toString.call(arr) !== "[object Array]")
+            arr = Array.prototype.slice.call(arguments);
+	this._registeredObjects = arr;
 	return this;
     },
     /**
@@ -837,8 +841,8 @@ Joint.prototype = {
 
 	var index = -1;
 	for (var i = 0, len = this._registeredObjects.length; i < len; i++){
-	    if (this._registeredObjects[i] === obj && 
-		this._registeredObjects[i].yourself()._capToStick === cap){
+            var capToStick = this._registeredObjects[i].yourself()._capToStick || "both";
+	    if (this._registeredObjects[i] === obj && capToStick === cap){
 		index = i;
 		break;
 	    }
@@ -849,15 +853,23 @@ Joint.prototype = {
 	return this;
     },
     /**
+     * @return {array} Registered Objects.
+     */
+    registeredObjects: function(){
+        return this._registeredObjects;
+    },
+    /**
      * Set the vertices of the connection
-     * @param {array} vertices Array of points (vertices)
+     * @param {array} vertices Array of points (vertices) - either of the form: {x: 5, y; 10} or "5 10" or "5@10"
      * @return {Joint}
      */
     setVertices: function(vertices){
-	var conVertices = this._opt.vertices = [];
+	var conVertices = this._opt.vertices = [], p;
 	// cast vertices to points
 	for (var i = 0, l = vertices.length; i < l; i++){
-	    conVertices.push(point(vertices[i].x, vertices[i].y));
+            p = (vertices[i].y === undefined) ?
+                    point(vertices[i]) : point(vertices[i].x, vertices[i].y);
+	    conVertices.push(p);
 	}
 	this.update();
 	return this;
@@ -897,9 +909,9 @@ Joint.prototype = {
     },
     /**
      * Register callback function on various events.
-     * @link Callbacks 
+     * @link Callbacks
      * @param {string} evt "justConnected"|"disconnected"|"justBroken"|"wiring"|"objectMoving"
-     * @param {function} fnc 
+     * @param {function} fnc
      * @return {Joint}
      * @example
      * j.registerCallback("justConnected", function(side){ ... this points to the object the joint was just connected to ... });
@@ -907,7 +919,7 @@ Joint.prototype = {
      * j.registerCallback("justBroken", function(mousePos){ ... this points to the joint object ... });
      * j.registerCallback("wiring", function(mousePos){ ... this points to the joint object ... });
      * j.registerCallback("objectMoving", function(obj){ ... this points to the joint object ... });
-     * 
+     *
      * j.registerCallback("justConnected", function(side){
      *   if (side === "start"){
      *     console.log("Start cap connected.");
@@ -925,24 +937,24 @@ Joint.prototype = {
      * @return {Joint}
      */
     straighten: function(){
-	this.connnection().remove();
 	this._opt.vertices = [];
 	this.update();
 	return this;
     },
     /**
      * Show/hide handle(s).
-     * If a connection arrow is, e.g., of type none, it is difficult to grab the end of the connection. 
+     * If a connection arrow is, e.g., of type none, it is difficult to grab the end of the connection.
      * For these cases, you can use handles, which are just simple circles showing at the end of a connection.
      * @param {string} cap &optional [start|end] Specifies on what side handle should be shown.
      * @return {Joint}
      */
     toggleHandle: function(cap){
-	if (typeof cap === "undefined"){
-	    this._opt.handle.start.enabled = !this._opt.handle.start.enabled;
-	    this._opt.handle.end.enabled = !this._opt.handle.start.enabled;
+	var handle = this._opt.handle;
+	if (!cap){
+	    handle.start.enabled = !handle.start.enabled;
+	    handle.end.enabled = !handle.end.enabled;
 	} else {
-	    this._opt.handle[cap].enabled = !this._opt.handle[cap].enabled;
+	    handle[cap].enabled = !handle[cap].enabled;
 	}
 	this.update();
 	return this;
@@ -979,8 +991,8 @@ Joint.prototype = {
     },
     /**
      * Set bounding box correction.
-     * This advanced feature of Joint library allows you to shift a point to which a connection sticks. 
-     * You can for example modify a connection to point to the center of an object or you can set a distance 
+     * This advanced feature of Joint library allows you to shift a point to which a connection sticks.
+     * You can for example modify a connection to point to the center of an object or you can set a distance
      * between an object and a connection arrow.
      * @param {object} [corr] correction Correction
      * @param {string} [corr.type] fake type of an object to which a cap points
@@ -992,7 +1004,7 @@ Joint.prototype = {
      * @return {Joint}
      * @example
      * // 1.) both sides of the connection will point to the center of
-     * //     a circular object with radius == 30 
+     * //     a circular object with radius == 30
      * j.setBBoxCorrection({
      *   type: "ellipse",
      *   x: 30,
@@ -1012,10 +1024,10 @@ Joint.prototype = {
      * });
      */
     setBBoxCorrection: function(corr, cap){
-	if (cap === undefined){
-	    this._opt.bboxCorrection["start"] = this._opt.bboxCorrection["end"] = corr;
+	if (!cap){
+	    this._opt.bboxCorrection.start = this._opt.bboxCorrection.end = corr;
 	} else {
-	    this._opt.bboxCorrection[cap] = corr;	    
+	    this._opt.bboxCorrection[cap] = corr;
 	}
 	this.update();
 	return this;
@@ -1023,10 +1035,12 @@ Joint.prototype = {
 
     /**
      * Highlight connection.
+     * Note that highlight diseappears after the first update.
      * @return {Joint} Return this.
      */
-    highlight: function(){
-	this.connection().attr("stroke", "red");
+    highlight: function(color){
+        color = color || "red";
+	this.connection().attr("stroke", color);
 	return this;
     },
 
@@ -1094,7 +1108,7 @@ Joint.resetPaper = function resetPaper(){
 
     // get an arrow object
 Joint.getArrow = function(type, size, attrs){
-    if (!size){	
+    if (!size){
 	size = 2; // default
     }
     var arrow = Joint.arrows[type](size);
@@ -1109,8 +1123,8 @@ Joint.getArrow = function(type, size, attrs){
 };
 
 /**
- * This object contains predefined arrow types. Currently, there are only two types: none and basic. 
- * These are considered general types and are suitable for most diagrams. Nevertheless, new arrows 
+ * This object contains predefined arrow types. Currently, there are only two types: none and basic.
+ * These are considered general types and are suitable for most diagrams. Nevertheless, new arrows
  * can be easily added. See arrows.js plugin, which provides some fancier arrows.
  * The names can be used as startArrow|endArrow types.
  * @example circle.joint(rect, { startArrow: { type: basic, size: 5, attrs: ... } });
@@ -1120,7 +1134,7 @@ Joint.arrows = {
 	if (!size){ size = 2; }
 	return {
 	    path: ["M",size.toString(),"0","L",(-size).toString(),"0"],
-	    dx: size, 
+	    dx: size,
 	    dy: size
 	};
     },
@@ -1129,12 +1143,12 @@ Joint.arrows = {
    	return {
 	    path: ["M",size.toString(),"0",
 		   "L",(-size).toString(),(-size).toString(),
-		   "L",(-size).toString(),size.toString(),"z"], 
-	    dx: size, 
-	    dy: size, 
-	    attrs: { 
-		stroke: "black", 
-		fill: "black" 
+		   "L",(-size).toString(),size.toString(),"z"],
+	    dx: size,
+	    dy: size,
+	    attrs: {
+		stroke: "black",
+		fill: "black"
 	    }
 	};
     }
@@ -1170,7 +1184,7 @@ Joint.getMousePosition = function(e, el){
     if (e.pageX || e.pageY) {
         pos = point(e.pageX, e.pageY);
     } else {
-	var 
+	var
 	docEl = document.documentElement,
 	docBody = document.body;
 	pos = point(e.clientX + (docEl.scrollLeft || docBody.scrollLeft) - docEl.clientLeft,
@@ -1325,7 +1339,7 @@ var JointDOMBuilder = {
 	return con;
     },
     label: function(){
-	if (this.opt.label === undefined) return undefined; 
+	if (this.opt.label === undefined) return undefined;
 	var pos = this.labelLocation,
 	    labelText = this.paper.text(pos.x, pos.y, this.opt.label).attr(this.opt.labelAttrs),
 	    bb = labelText.getBBox(),
@@ -1336,7 +1350,7 @@ var JointDOMBuilder = {
     startCap: function(){
 	var opt = this.opt.arrow.start,
 	    startCap = this.paper.path(opt.path.join(" ")).attr(opt.attrs);
-	startCap.translate(this.jointLocation.start.translate.x, 
+	startCap.translate(this.jointLocation.start.translate.x,
 			   this.jointLocation.start.translate.y);
 	startCap.rotate(this.jointLocation.start.rotate);
 	startCap.show();
@@ -1345,7 +1359,7 @@ var JointDOMBuilder = {
     endCap: function(){
 	var opt = this.opt.arrow.end,
 	    endCap = this.paper.path(opt.path.join(" ")).attr(opt.attrs);
-	endCap.translate(this.jointLocation.end.translate.x, 
+	endCap.translate(this.jointLocation.end.translate.x,
 			 this.jointLocation.end.translate.y);
 	endCap.rotate(this.jointLocation.end.rotate);
 	endCap.show();
@@ -1362,8 +1376,16 @@ var JointDOMBuilder = {
  * @constructor
  */
 function Point(x, y){
-    this.x = x;
-    this.y = y;
+    var xy;
+    if (y === undefined){
+        // from string
+        xy = x.split(x.indexOf("@") === -1 ? " " : "@");
+        this.x = parseInt(xy[0], 10);
+        this.y = parseInt(xy[1], 10);
+    } else {
+        this.x = x;
+        this.y = y;
+    }
 }
 function point(x, y){ return new Point(x, y); }
 
@@ -1375,10 +1397,10 @@ Point.prototype = {
 
     deepCopy: function(){ return point(this.x, this.y); },
     /**
-     * If I lie outside rectangle r, return the nearest point on the boundary of rect r, 
+     * If I lie outside rectangle r, return the nearest point on the boundary of rect r,
      * otherwise return me.
      * (see Squeak Smalltalk, Point>>adhereTo:)
-     * @param {Rect} r 
+     * @param {Rect} r
      * @return {Point}
      */
     adhereToRect: function(r){
@@ -1471,14 +1493,14 @@ Line.prototype = {
      * @note for applications where the exact length is not necessary (e.g. compare only)
      */
     squaredLength: function(){
-	var 
+	var
 	x0 = this.start.x, y0 = this.start.y,
 	x1 = this.end.x, y1 = this.end.y;
 	return (x0 -= x1)*x0 + (y0 -= y1)*y0;
     },
 
     /**
-     * @return {point} my midpoint 
+     * @return {point} my midpoint
      */
     midpoint: function(){
 	return point((this.start.x + this.end.x) / 2,
@@ -1528,14 +1550,14 @@ function Rect(o){
     this.height = o.height;
 }
 
-function rect(o){ 
+function rect(o){
     if (typeof o.width === "undefined"){
 	return new Rect({x: arguments[0],
 			 y: arguments[1],
 			 width: arguments[2],
 			 height: arguments[3]});
     }
-    return new Rect(o); 
+    return new Rect(o);
 }
 
 Rect.prototype = {
@@ -1612,7 +1634,7 @@ Rect.prototype = {
 	    var side = this.sideNearestToPoint(p);
 	    switch (side){
 	    case "right": return point(this.x + this.width, p.y);
-	    case "left": return point(this.x, p.y);	    
+	    case "left": return point(this.x, p.y);
 	    case "bottom": return point(p.x, this.y + this.height);
 	    case "top": return point(p.x, this.y);
 	    }
@@ -1630,7 +1652,7 @@ Rect.prototype = {
 	// (clockwise, starting from the top side)
 	var sides = [
 	    line(this.origin(), this.topRight()),
-	    line(this.topRight(), this.corner()), 
+	    line(this.topRight(), this.corner()),
 	    line(this.corner(), this.bottomLeft()),
 	    line(this.bottomLeft(), this.origin())
 	],
@@ -1679,7 +1701,7 @@ Ellipse.prototype = {
     /**
      * Find point on me where line from my center to
      * point p intersects my boundary.
-     * @see Squeak Smalltalk, EllipseMorph>>intersectionWithLineSegmentFromCenterTo:    
+     * @see Squeak Smalltalk, EllipseMorph>>intersectionWithLineSegmentFromCenterTo:
      */
     intersectionWithLineFromCenterToPoint: function(p){
 	var dx = p.x - this.x,
@@ -1699,7 +1721,7 @@ Ellipse.prototype = {
 	var y = m * x;
 	return point(this.x + x, this.y + y);
     }
-    
+
 };
 
 /**
@@ -1723,7 +1745,7 @@ BezierSegment.prototype = {
      * Get a point on me at the specified time t.
      */
     getPoint: function(t){
-	var 
+	var
 	a = 1 - t,	// (1 - t)
 	b = a*a,	// (1 - t)^2
 	c = b*a,	// (1 - t)^3
@@ -1733,7 +1755,7 @@ BezierSegment.prototype = {
 	return point(c*this.p0.x + 3*b*t*this.p1.x + 3*a*tt*this.p2.x + ttt*this.p3.x,
 		     c*this.p0.y + 3*b*t*this.p1.y + 3*a*tt*this.p2.y + ttt*this.p3.y);
     }
-    
+
 };
 
 /**
@@ -1741,7 +1763,7 @@ BezierSegment.prototype = {
  */
 function Bezier(){}
 
-/** 
+/**
  * Cubic Bezier curve path through points.
  * Ported from ActionScript implementation by Andy Woodruff (http://cartogrammar.com/blog)
  */
@@ -1753,7 +1775,7 @@ Bezier.curveThroughPoints = function(points, z, angleFactor){
     if (typeof angleFactor === "undefined"){
 	angleFactor = 0.75;
     }
-    
+
     var path = [];	// the result SVG path as an array of path commands
     if (points.length < 2){
 	throw new Error("Points array must have minimum of two points.");
@@ -1780,14 +1802,14 @@ Bezier.curveThroughPoints = function(points, z, angleFactor){
     } else if (angleFactor > 1){
 	angleFactor = 1;
     }
-    
+
     /**
      * Calculate all the curve control points.
      */
 
     // None of this junk will do any good if there are only two points
     if (p.length > 2){
-	// Ordinarily, curve calculations will start with the second point 
+	// Ordinarily, curve calculations will start with the second point
 	// and go through the second-to-last point
 	var firstPt = 1;
 	var lastPt = p.length-1;
@@ -1799,23 +1821,23 @@ Bezier.curveThroughPoints = function(points, z, angleFactor){
 	}
 
 	// An array to store the two control points for each point
-	var controlPts = [];	
-	// Loop through all the points (except the first and last 
+	var controlPts = [];
+	// Loop through all the points (except the first and last
 	// if not a closed line) to get curve control points for each.
 	for (var i = firstPt; i < lastPt; i++) {
 	    // The previous, current, and next points
 
-	    // If the first point (of a closed line), use the 
+	    // If the first point (of a closed line), use the
 	    // second-to-last point as the previous point
 	    var p0 = (i-1 < 0) ? p[p.length-2] : p[i-1];
 	    var p1 = p[i];
-	    // If the last point (of a closed line), use the 
+	    // If the last point (of a closed line), use the
 	    // second point as the next point
 	    var p2 = (i+1 == p.length) ? p[1] : p[i+1];
 
 	    // Distance from previous point to current point
 	    var a = p0.distance(p1);
-	    // Correct for near-zero distances, a cheap way to prevent 
+	    // Correct for near-zero distances, a cheap way to prevent
 	    // division by zero
 	    if (a < 0.001){ a = 0.001; }
 	    // Distance from current point to next point
@@ -1828,44 +1850,44 @@ Bezier.curveThroughPoints = function(points, z, angleFactor){
 	    // Make sure above value is between -1 and 1 so that acos will work
 	    if (cos < -1){ cos = -1; }
 	    else if (cos > 1){ cos = 1; }
-	    // Angle formed by the two sides of the triangle 
+	    // Angle formed by the two sides of the triangle
 	    // (described by the three points above) adjacent to the current point
 	    var C = acos(cos);
-	    // Duplicate set of points. Start by giving previous and next points 
+	    // Duplicate set of points. Start by giving previous and next points
 	    // values RELATIVE to the current point.
 	    var aPt = point(p0.x-p1.x,p0.y-p1.y);
 	    var bPt = point(p1.x,p1.y);
 	    var cPt = point(p2.x-p1.x,p2.y-p1.y);
 
-	    /* We'll be adding adding the vectors from the previous and next points 
-	       to the current point, but we don't want differing magnitudes (i.e. 
-	       line segment lengths) to affect the direction of the new vector. 
+	    /* We'll be adding adding the vectors from the previous and next points
+	       to the current point, but we don't want differing magnitudes (i.e.
+	       line segment lengths) to affect the direction of the new vector.
                Therefore we make sure the segments we use, based on the duplicate points
-	       created above, are of equal length. The angle of the new vector will 
-               thus bisect angle C (defined above) and the perpendicular to this is 
-               nice for the line tangent to the curve. The curve control points will 
+	       created above, are of equal length. The angle of the new vector will
+               thus bisect angle C (defined above) and the perpendicular to this is
+               nice for the line tangent to the curve. The curve control points will
                be along that tangent line.
 	    */
 	    if (a > b){
-		// Scale the segment to aPt (bPt to aPt) to the size of b 
+		// Scale the segment to aPt (bPt to aPt) to the size of b
 		// (bPt to cPt) if b is shorter.
 		aPt.normalize(b);
 	    } else if (b > a){
-		// Scale the segment to cPt (bPt to cPt) to the size of a (aPt to bPt) 
+		// Scale the segment to cPt (bPt to cPt) to the size of a (aPt to bPt)
 		// if a is shorter.
 		cPt.normalize(a);
 	    }
-	    // Offset aPt and cPt by the current point to get them back to 
+	    // Offset aPt and cPt by the current point to get them back to
 	    // their absolute position.
 	    aPt.offset(p1.x,p1.y);
 	    cPt.offset(p1.x,p1.y);
 
-	    // Get the sum of the two vectors, which is perpendicular to the line 
+	    // Get the sum of the two vectors, which is perpendicular to the line
 	    // along which our curve control points will lie.
 
 	    // x component of the segment from previous to current point
 	    var ax = bPt.x-aPt.x;
-	    var ay = bPt.y-aPt.y; 
+	    var ay = bPt.y-aPt.y;
 	    // x component of the segment from next to current point
 	    var bx = bPt.x-cPt.x;
 	    var by = bPt.y-cPt.y;
@@ -1878,7 +1900,7 @@ Bezier.curveThroughPoints = function(points, z, angleFactor){
 		rx = -bx;
 		ry = by;
 	    }
-	    // Switch rx and ry when y or x difference is 0. This seems to prevent 
+	    // Switch rx and ry when y or x difference is 0. This seems to prevent
 	    // the angle from being perpendicular to what it should be.
 	    if (ay === 0 && by === 0){
 		rx = 0;
@@ -1891,20 +1913,20 @@ Bezier.curveThroughPoints = function(points, z, angleFactor){
 	    // var r = sqrt(rx*rx+ry*ry);
 	    // angle of the new vector
 	    var theta = atan2(ry,rx);
-	    // Distance of curve control points from current point: a fraction 
+	    // Distance of curve control points from current point: a fraction
 	    // the length of the shorter adjacent triangle side
 	    var controlDist = mmin(a,b)*z;
-	    // Scale the distance based on the acuteness of the angle. Prevents 
+	    // Scale the distance based on the acuteness of the angle. Prevents
 	    // big loops around long, sharp-angled triangles.
 	    var controlScaleFactor = C/PI;
 	    // Mess with this for some fine-tuning
 	    controlDist *= ((1-angleFactor) + angleFactor*controlScaleFactor);
-	    // The angle from the current point to control points: 
+	    // The angle from the current point to control points:
 	    // the new vector angle plus 90 degrees (tangent to the curve).
 	    var controlAngle = theta+PI/2;
 	    // Control point 2, curving to the next point.
 	    var controlPoint2 = Point.fromPolar(controlDist,controlAngle);
-	    // Control point 1, curving from the previous point 
+	    // Control point 1, curving from the previous point
 	    // (180 degrees away from control point 2).
 	    var controlPoint1 = Point.fromPolar(controlDist,controlAngle+PI);
 
@@ -1912,8 +1934,8 @@ Bezier.curveThroughPoints = function(points, z, angleFactor){
 	    controlPoint1.offset(p1.x,p1.y);
 	    controlPoint2.offset(p1.x,p1.y);
 
-	    /* Haven't quite worked out how this happens, but some control 
-	       points will be reversed. In this case controlPoint2 will be 
+	    /* Haven't quite worked out how this happens, but some control
+	       points will be reversed. In this case controlPoint2 will be
                farther from the next point than controlPoint1 is.
 	       Check for that and switch them if it's true.
 	    */
@@ -1933,15 +1955,15 @@ Bezier.curveThroughPoints = function(points, z, angleFactor){
 
 	// If this isn't a closed line
 	if (firstPt == 1){
-	    // Draw a regular quadratic Bézier curve from the first to second points, 
+	    // Draw a regular quadratic Bézier curve from the first to second points,
 	    // using the first control point of the second point
 	    path.push("S", controlPts[1][0].x,controlPts[1][0].y,p[1].x,p[1].y);
 	}
 
-	// Change to true if you want to use lineTo for straight lines of 3 or 
+	// Change to true if you want to use lineTo for straight lines of 3 or
 	// more points rather than curves. You'll get straight lines but possible sharp corners!
 	var straightLines = true;
-	// Loop through points to draw cubic Bézier curves through the penultimate 
+	// Loop through points to draw cubic Bézier curves through the penultimate
 	// point, or through the last point if the line is closed.
 	for (var i = firstPt; i < lastPt - 1; i++){
 	    // Determine if multiple points in a row are in a straight line
@@ -1953,7 +1975,7 @@ Bezier.curveThroughPoints = function(points, z, angleFactor){
 	    if (straightLines && isStraight){
 		path.push("L", p[i+1].x,p[i+1].y);
 	    } else {
-		// BezierSegment instance using the current point, its second control 
+		// BezierSegment instance using the current point, its second control
 		// point, the next point's first control point, and the next point
 		var bezier = bezierSegment(p[i],controlPts[i][1],controlPts[i+1][0],p[i+1]);
 		// Construct the curve out of 100 segments (adjust number for less/more detail)
@@ -1964,14 +1986,14 @@ Bezier.curveThroughPoints = function(points, z, angleFactor){
 		}
 	    }
 	}
-	// If this isn't a closed line	
+	// If this isn't a closed line
 	if (lastPt == p.length-1){
 	    // Curve to the last point using the second control point of the penultimate point.
 	    path.push("S", controlPts[i][1].x,controlPts[i][1].y,p[i+1].x,p[i+1].y);
 	}
 
 	// just draw a line if only two points
-    } else if (p.length == 2){	
+    } else if (p.length == 2){
 	path.push("M", p[0].x,p[0].y);
 	path.push("L", p[1].x,p[1].y);
     }
@@ -1999,8 +2021,8 @@ Joint.Bezier = Bezier;
 var _attr = global.Raphael.el.attr;
 global.Raphael.el.attr = function(){
     // is it a getter or el is not a joint object?
-    if ((arguments.length == 1 && 
-	 (typeof arguments[0] === "string" || typeof arguments[0] === "array")) || 
+    if ((arguments.length == 1 &&
+	 (typeof arguments[0] === "string" || typeof arguments[0] === "array")) ||
 	(typeof this.joints === "undefined")){
 	return _attr.apply(this, arguments);	// yes
     }
@@ -2012,8 +2034,8 @@ global.Raphael.el.attr = function(){
     }
 
     _attr.apply(this, arguments);
-    
-    var 
+
+    var
     n = this.attrs,	// new attributes
     positionChanged = false,
     strokeChanged = false;
@@ -2026,11 +2048,11 @@ global.Raphael.el.attr = function(){
     }
     if (o.stroke != n.stroke){
 	strokeChanged = true;
-    }    
+    }
 
     for (var i = this.joints().length - 1; i >= 0; --i){
 	var joint = this.joints()[i];
-	
+
 	if (positionChanged){
 	    joint.update();
 	    joint.callback("objectMoving", joint, [this]);
@@ -2043,7 +2065,7 @@ global.Raphael.el.attr = function(){
 
 /**
  * Create a joint between a Raphael object and to object.
- * @param {RaphaelObject} to 
+ * @param {RaphaelObject} to
  * @param {object} [opts] opt {@link Joint}
  * @return {Joint}
  */

@@ -1,20 +1,3 @@
-/**
- * Get number value.
- */
-var $VN = function(id){
-    return parseInt(uki('#' + id).value());
-};
-/**
- * Get/set string value.
- */
-var $VS = function(id, value){
-    if (value !== undefined){
-	uki('#' + id).value(value);
-	return value;
-    }
-    return uki('#' + id).value();
-};
-
 var app = {
     version: "0.0.1",
     about: "Joint Diagram Builder v0.0.1, author: David Durman, 2010",
@@ -52,18 +35,20 @@ var app = {
 		args: args
 	    };
 	},
-	execute: function(cmd){
-	    var cmdStr = cmd.replace(/^\s+|\s+$/g,""), properties,
-	        registeredElements = Joint.dia.registeredElements();
-
-	    cmd = app.console.parse(cmdStr);
-
-
-	    switch (cmd.base[0]){
-	    case "clear":
-		Joint.resetPaper();
-		break;
-	    case "save":
+        exe: function(obj){
+            console.log("Executing: ", obj);
+            switch (obj.cmd){
+            case "new":
+                if (obj.object == "joint"){
+		    Joint.dia.Joint(obj.from, obj.to, Joint.dia[obj.module][obj.type]).registerForever(Joint.dia.registeredElements());
+                } else {
+                    Joint.dia[obj.module][obj.object].create(obj.properties);
+                }
+                break;
+            case "clear":
+                Joint.resetPaper();
+                break;
+            case "save":
 		var json = Joint.dia.stringify(Joint.paper());
 		console.log(json);
 		$VS("console", json);
@@ -77,84 +62,23 @@ var app = {
 	    case "help":
 		$VS("console", app.console.help);
 		break;
-	    case "toggle":
-		if (cmd.base[1] == "ghosting")
-		    for (var i = 0, l = registeredElements.length; i < l; i++)
-			registeredElements[i].toggleGhosting();
-		break;
-	    case "new":
-		switch (cmd.base[1]){
-		case "uml":
-		    switch (cmd.base[2]){
-		    case "state":
-			properties = {
-			    label: cmd.args[0],
-			    rect: {x: (cmd.args[1] || 100), y: (cmd.args[2] || 100), width: (cmd.args[3] || 100), height: (cmd.args[4] || 80)},
-			    attrs: { fill: cmd.args[5] }
-			};
-			Joint.dia.uml.State.create(properties);
-			break;
-		    case "endstate":
-			properties = {
-			    position: {x: parseInt(cmd.args[0]), y: parseInt(cmd.args[1])},
-			    radius: (cmd.args[2] ? parseInt(cmd.args[2]) : undefined)
-			};
-			Joint.dia.uml.EndState.create(properties);
-			break;
-		    case "startstate":
-			properties = {
-			    position: {x: parseInt(cmd.args[0]), y: parseInt(cmd.args[1])},
-			    radius: (cmd.args[2] ? parseInt(cmd.args[2]) : undefined)
-			};
-			Joint.dia.uml.StartState.create(properties);
-			break;
-		    case "arrow":
-		    case "aggregation":
-		    case "generalization":
-			if (cmd.args.length){
-			    var from, to;
-			    if (cmd.args.length == 4){
-				from = {x: parseInt(cmd.args[0]), y: parseInt(cmd.args[1])};
-				to = {x: parseInt(cmd.args[2]), y: parseInt(cmd.args[3])};
-			    } else {  // from/to specified by label of connected states
-				for (var i = 0, l = registeredElements.length; i < l; i++){
-				    if (registeredElements[i].properties && registeredElements[i].properties.label == cmd.args[0])
-					from = registeredElements[i];
-				    if (registeredElements[i].properties && cmd.args.length > 1 && registeredElements[i].properties.label == cmd.args[1])
-					to = registeredElements[i];
-				}
-			    }
-			}
-			if (cmd.base[2] == "aggregation")
-			    Joint.dia.Joint(from, to, Joint.dia.uml.aggregationArrow).registerForever(Joint.dia.registeredElements());
-			else if (cmd.base[2] == "generalization")
-			    Joint.dia.Joint(from, to, Joint.dia.uml.generalizationArrow).registerForever(Joint.dia.registeredElements());
-			else
-			    Joint.dia.Joint(from, to, Joint.dia.uml.arrow).registerForever(Joint.dia.registeredElements());
-			break;
-		    }
-		    break;
-		}
-		break;
-		// JSON string or unknown command
-	    default:
+            case "toggle-ghosting":
+                var registeredElements = Joint.dia.registeredElements();
+	        for (var i = 0, l = registeredElements.length; i < l; i++)
+		    registeredElements[i].toggleGhosting();
+                break;
+            case "open":
 		try {
-		    Joint.dia.parse(cmdStr);	// load diagram as JSON string
+		    Joint.dia.parse(obj.json);	// load diagram as JSON string
 		} catch (x) {
-		    console.log("Unknown command: " + cmdStr);
+		    console.log("Unexpected JSON format: " + obj.json);
 		}
 		break;
-	    }
-	    $VS("console-history", cmdStr + "\n" + $VS("console-history"));
-	    //	    $VS("console", "");	// clear the console
-	}
+            default:
+                break;  // conveniecne
+            }
+        }
     }
 };
-
-
-/**
- * App init.
- */
-app.init();
 
 
