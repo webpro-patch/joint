@@ -272,7 +272,7 @@ Element.prototype = {
 	this._opt = {
 	    draggable: true,	// enable dragging?
 	    ghosting: false,		// enable ghosting?
-	    toolbox: true		// enable toolbox?
+	    toolbox: false		// enable toolbox?
 	};
 
 	this.paper = Joint.paper();
