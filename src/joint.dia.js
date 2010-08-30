@@ -54,6 +54,13 @@ var dia = Joint.dia = {
 	return (this._registeredObjects[Joint.paper().euid()] || (this._registeredObjects[Joint.paper().euid()] = []));
     },
     /**
+     * Returns registered joints of the current paper.
+     * @return {Joint[]} Array of registered joints.
+     */
+    registeredJoints: function(){
+	return (this._registeredJoints[Joint.paper().euid()] || (this._registeredJoints[Joint.paper().euid()] = []));
+    },
+    /**
      * Register object to the current paper.
      * You don't have to use this method unless you really know what you're doing.
      * @param {Element|Joint} obj Object to be registered.
