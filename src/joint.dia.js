@@ -51,7 +51,7 @@ var dia = Joint.dia = {
      * @return {Element[]} Array of registered elements.
      */
     registeredElements: function(){
-	return (this._registeredObjects[Joint.paper()] || (this._registeredObjects[Joint.paper()] = []));
+	return (this._registeredObjects[Joint.paper().euid()] || (this._registeredObjects[Joint.paper().euid()] = []));
     },
     /**
      * Register object to the current paper.
@@ -60,14 +60,14 @@ var dia = Joint.dia = {
      * @return {Element|Joint} Registered object.
      */
     register: function(obj){
-	(this._registeredObjects[Joint.paper()] || (this._registeredObjects[Joint.paper()] = [])).push(obj);
+	(this._registeredObjects[Joint.paper().euid()] || (this._registeredObjects[Joint.paper().euid()] = [])).push(obj);
     },
     /**
      * Cancel registration of an element in the current paper.
      * @param {Element} obj Object to be unregistered.
      */
     unregister: function(obj){
-	var register = (this._registeredObjects[Joint.paper()] || (this._registeredObjects[Joint.paper()] = [])),
+	var register = (this._registeredObjects[Joint.paper().euid()] || (this._registeredObjects[Joint.paper().euid()] = [])),
 	    idx = register.length;
 	while (idx--)
 	    if (register[idx] === obj)
@@ -79,14 +79,14 @@ var dia = Joint.dia = {
      * @param {Joint}
      */
     registerJoint: function(j){
-	(this._registeredJoints[Joint.paper()] || (this._registeredJoints[Joint.paper()] = [])).push(j);
+	(this._registeredJoints[Joint.paper().euid()] || (this._registeredJoints[Joint.paper().euid()] = [])).push(j);
     },
     /**
      * Cancel registration of a joint in the current paper.
      * @param {Joint} j Joint to be unregistered.
      */
     unregisterJoint: function(j){
-	var register = (this._registeredJoints[Joint.paper()] || (this._registeredJoints[Joint.paper()] = [])),
+	var register = (this._registeredJoints[Joint.paper().euid()] || (this._registeredJoints[Joint.paper().euid()] = [])),
 	    idx = register.length;
 	while (idx--)
 	    if (register[idx] === j)
@@ -725,7 +725,7 @@ Element.prototype = {
      */
     embed: function(){
 	var
-	ros = dia._registeredObjects[this.paper],
+	ros = dia._registeredObjects[this.paper.euid()],
 	myBB = rect(this.wrapper.getBBox()),
 	embedTo = null;
 

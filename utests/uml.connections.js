@@ -3,7 +3,7 @@
  */
 
 var uml = Joint.dia.uml;
-Joint.paper("world", 800, 1000);
+var paper = Joint.paper("world", 800, 1000);
 
 /**
  * Arrow.

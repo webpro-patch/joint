@@ -2089,4 +2089,8 @@ global.Raphael.el.joints = function(){
     return (this._joints || (this._joints = []));
 };
 
+global.Raphael.fn.euid = function(){
+    return Joint.generateEuid.call(this);
+};
+
 })(this);	// END CLOSURE

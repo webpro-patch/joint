@@ -64,7 +64,7 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
      * @return {Array} Array of the constructed elements.
      */
     parse: function(json){
-	var arr = JSON.parse(json), o, m, e, 
+	var arr = JSON.parse(json), o, m, e,
 	    element, joints = [], i, len, elements = {},
 	    objects = [];
 
@@ -80,7 +80,7 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
 	    // create joints separatly, after all elements are created
 	    // so that they can connect them
 	    if (e === "joint"){
-		joints.push(o);		
+		joints.push(o);
 		objects.push(o);
 		continue;
 	    }
@@ -125,7 +125,7 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
      * @param {Object} elements Hash table of elements (key: euid, value: element).
      */
     createJoints: function(joints, elements){
-	var iJoints = joints.length, 
+	var iJoints = joints.length,
             joint, from, to, realFrom, realTo,
             newJoint, toRegister, toRegisterElement, iRegister, cap,
 	    sides = ["start", "end", "both"], iSides = 3;
@@ -165,10 +165,11 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
      */
     stringify: function(paper){
 	var objs, iObjs, o, str = [],
-	    registeredObjects = this._registeredObjects, registeredJoints = this._registeredJoints;
+            registeredObjects = this._registeredObjects, registeredJoints = this._registeredJoints,
+            paperEuid = paper.euid();
 	// elements
-	if (registeredObjects[paper]){
-	    objs = registeredObjects[paper];
+	if (registeredObjects[paperEuid]){
+	    objs = registeredObjects[paperEuid];
 	    iObjs = objs.length;
 	    while (iObjs--){
 		o = objs[iObjs];
@@ -177,8 +178,8 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
 	    }
 	}
 	// joints
-	if (registeredJoints[paper]){
-	    objs = registeredJoints[paper];
+	if (registeredJoints[paperEuid]){
+	    objs = registeredJoints[paperEuid];
 	    iObjs = objs.length;
 	    while (iObjs--){
 		o = objs[iObjs];
