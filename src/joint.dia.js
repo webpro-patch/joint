@@ -565,7 +565,8 @@ Element.prototype = {
 	this.toolbox[this.toolbox.length-1].toFront();
 	this.toolbox[this.toolbox.length-1].node.onclick = function(){ self.unembed(); };
 	// delete (icon: stop.png)
-	this.toolbox.push(this.paper.image("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9oFEBQbDFwnwRsAAAE8SURBVBjTVZG9agJREEbP1TWL266wja2tWggipEhpIxh9gIUgiIW1vZWvkHJJHVLYig+ghWARbGzEYgMKrojr/t4UNwoZmGY4882BEfyVHA5HmOaEXA6khCSB83nK4fAmHOcAoAFI2+7RaIwxTQhDiGO1cLu1WK3egS6AkIPBiFptjGU9kc3Cfg++D4WCSg8CyWLxRRD0MxjGBMNQYLMJlQoUi9BuQ6kEx6PAMDrAs4aUcL3C5QLLJVSrUC6D68J8Duez0gIySKk8fV8ppCnoOux24HkQRUoH0EhTNTBNpeG6CqzX4XSC2eyRrBEEUzyvha7Deq1Oe54CXVcFxfE3sBXStgsYxjuW9UqaCsJQAfcOwx/i+EU4zkY8ntLrfZLPdwB1NklUYpJ0heNsHk8BIIr6RNEH/2t7BwF+AeKFndSgPkjIAAAAAElFTkSuQmCC", tx + 11, ty + 11, 11, 11));
+//	this.toolbox.push(this.paper.image("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9oFEBQbDFwnwRsAAAE8SURBVBjTVZG9agJREEbP1TWL266wja2tWggipEhpIxh9gIUgiIW1vZWvkHJJHVLYig+ghWARbGzEYgMKrojr/t4UNwoZmGY4882BEfyVHA5HmOaEXA6khCSB83nK4fAmHOcAoAFI2+7RaIwxTQhDiGO1cLu1WK3egS6AkIPBiFptjGU9kc3Cfg++D4WCSg8CyWLxRRD0MxjGBMNQYLMJlQoUi9BuQ6kEx6PAMDrAs4aUcL3C5QLLJVSrUC6D68J8Duez0gIySKk8fV8ppCnoOux24HkQRUoH0EhTNTBNpeG6CqzX4XSC2eyRrBEEUzyvha7Deq1Oe54CXVcFxfE3sBXStgsYxjuW9UqaCsJQAfcOwx/i+EU4zkY8ntLrfZLPdwB1NklUYpJ0heNsHk8BIIr6RNEH/2t7BwF+AeKFndSgPkjIAAAAAElFTkSuQmCC", tx + 11, ty + 11, 11, 11));
+        this.toolbox.push(this.paper.path("M24.778,21.419 19.276,15.917 24.777,10.415 21.949,7.585 16.447,13.087 10.945,7.585 8.117,10.415 13.618,15.917 8.116,21.419 10.946,24.248 16.447,18.746 21.948,24.248").attr({fill: "#000", stroke: "none"}).translate(tx, ty).scale(0.5));
 	this.toolbox[this.toolbox.length-1].toFront();
 	this.toolbox[this.toolbox.length-1].node.onclick = function(){ self.remove(); };
 	// clone (mint icon: sound_grey.png)
@@ -783,6 +784,10 @@ Element.prototype = {
      * @example e.scale(1.5);
      */
     scale: function(sx, sy){
+	// save translation
+	this.properties.sx = sx;
+	this.properties.sy = sy;
+
 	this.wrapper.scale.apply(this.wrapper, arguments);
 	this.zoom.apply(this, arguments);
 	// apply scale to all subshapes that are Elements (were embeded)

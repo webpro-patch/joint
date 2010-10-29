@@ -1,5 +1,8 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/transitional.dtd">
 <html>
     <head>
+        <script src="../lib/json2.js" type="text/javascript"></script>
         <script src="../lib/raphael.js" type="text/javascript"></script>
 	<script type="text/javascript" src="../src/joint.js"></script>
         <script src="../src/joint.arrows.js" type="text/javascript"></script>
@@ -23,8 +26,6 @@
             border-radius: 30px;
           }
         </style>
-    </head>
-    <body>
         <script type="text/javascript">
             function gup(name){
               name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
@@ -36,15 +37,18 @@
               else
                 return results[1];
             }
-
-            var srcs = gup("unit").split(',');
-	    for (var i = 0, l = srcs.length; i < l; i++){
-	      var sel = document.createElement("script");
-              sel.type = "text/javascript";
-              sel.src = srcs[i] + ".js";
-              document.head.appendChild(sel);
-	    }
+            function init(){
+              var srcs = gup("unit").split(',');
+	      for (var i = 0, l = srcs.length; i < l; i++){
+	        var sel = document.createElement("script");
+                sel.type = "text/javascript";
+                sel.src = srcs[i] + ".js";
+                document.getElementsByTagName("head").item(0).appendChild(sel);
+	      }
+            }
         </script>
+    </head>
+    <body onload="init()">
         <div id="world"></div>
     </body>
 </html>

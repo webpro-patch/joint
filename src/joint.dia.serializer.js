@@ -85,7 +85,6 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
 		continue;
 	    }
 	    // construct the element
-	    console.log(this);
 	    if (this[m]){
 		if (this[m][e]){
 		    element = this[m][e].create(o);
@@ -109,6 +108,9 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
 	this.createJoints(joints, elements);
 	return objects;
     },
+    /**
+     * @private
+     */
     hierarchize: function(elements){
 	var euid, element;
 	for (euid in elements){
@@ -128,7 +130,7 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
 	var iJoints = joints.length,
             joint, from, to, realFrom, realTo,
             newJoint, toRegister, toRegisterElement, iRegister, cap,
-	    sides = ["start", "end", "both"], iSides = 3;
+	    sides = ["start", "end", "both"], iSides = sides.length;
 	// for all joints of all elements
 	while (iJoints--){
 	    joint = joints[iJoints];
@@ -143,7 +145,7 @@ Joint.Mixin(Joint.dia, /** @lends Joint.dia */ {
 	    newJoint = this.Joint(realFrom, realTo, joint.opt);
 	    // register caps - elements
 	    toRegister = [];
-	    iSides = 3;
+	    iSides = sides.length;
 	    while (iSides--){
 		cap = sides[iSides];
 		iRegister = joint.registered[cap].length;
@@ -202,7 +204,7 @@ Joint.Mixin(Joint.dia.Element.prototype, /** @lends Joint.dia.Element.prototype 
      * @return {Element} Cloned element.
      */
     clone: function(){
-	return Joint.dia.parse(this.stringify());
+	return Joint.dia.parse(this.stringify())[0];
     }
 });
 

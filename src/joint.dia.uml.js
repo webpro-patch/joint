@@ -119,9 +119,11 @@ uml.State = Element.extend({
 	if (!properties.actions){
 	    properties.actions = {};
 	}
-	p.entryAction = properties.actions.entry || null;
-	p.exitAction = properties.actions.exit || null;
-	p.innerActions = properties.actions.inner || [];
+        p.actions = {
+            entry: properties.actions.entry || null,
+            exit: properties.actions.exit || null,
+            inner: properties.actions.inner || []
+        };
 	p.actionsOffsetX = properties.actionsOffsetX || 5;
 	p.actionsOffsetY = properties.actionsOffsetY || 5;
 	// wrapper
@@ -148,11 +150,11 @@ uml.State = Element.extend({
     getActionsElement: function(){
 	// collect all actions
 	var p = this.properties;
-	var str = (p.entryAction) ? "entry/ " + p.entryAction + "\n" : "";
-	str += (p.exitAction) ? "exit/ " + p.exitAction + "\n" : "";
-	var l = p.innerActions.length;
+	var str = (p.actions.entry) ? "entry/ " + p.actions.entry + "\n" : "";
+	str += (p.actions.exit) ? "exit/ " + p.actions.exit + "\n" : "";
+	var l = p.actions.inner.length;
 	for (var i = 0; i < l; i += 2){
-	    str += p.innerActions[i] + "/ " + p.innerActions[i+1] + "\n";
+	    str += p.actions.inner[i] + "/ " + p.actions.inner[i+1] + "\n";
 	}
 	// trim
 	str = str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');

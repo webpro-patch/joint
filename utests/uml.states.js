@@ -182,11 +182,6 @@ var s812 = uml.State.create({
 console.log(s8.stringify());
 
 /**
- * TODO: clone, addToolbox, toggleToolbox, removeToolbox, delInner, setWrapper, addInner,
- * zoomer, translate, toBack, toFront, unembed
- */
-
-/**
  * Removal.
  */
 
@@ -268,3 +263,56 @@ console.log(j1112.registeredObjects().indexOf(s12) === -1);
 console.log(s12.joints().length === 0);
 console.log(j1112.connection() === null);
 
+/**
+ * Clonning.
+ */
+
+var s13 = uml.State.create({
+  rect: {x: 100, y: 650, width: 100, height: 60},
+  label: "s13",
+  attrs: {
+    fill: "90-#000-purple:1-#fff"
+  },
+  actions: {
+    entry: "init()",
+    exit: "destroy()"
+  }
+});
+
+var s13_clone = s13.clone();
+console.log(s13_clone.properties.label === s13.properties.label);
+console.log(s13_clone.properties.actions.entry === s13.properties.actions.entry);
+console.log(s13_clone.properties.actions.exit === s13.properties.actions.exit);
+console.log(s13_clone.euid() !== s13.euid());
+
+/**
+ * TODO: clone, addToolbox, toggleToolbox, removeToolbox, delInner, setWrapper, addInner,
+ * zoomer, translate, toBack, toFront, unembed
+ */
+
+
+/**
+ * Scale.
+ */
+
+/*
+var s14 = uml.State.create({
+  rect: {x: 100, y: 750, width: 100, height: 60},
+  label: "s14",
+  attrs: {
+    fill: "90-#000-green:1-#fff"
+  },
+  actions: {
+    entry: "init()",
+    exit: "destroy()"
+  }
+});
+*/
+
+//var s14_str = s14.stringify();
+//console.log(s14_str);
+//s14.scale(2);
+//var s14_scaled_str = s14.stringify();
+//console.log(s14_scaled_str);
+
+//Joint.dia.parse(s14_scaled_str);
