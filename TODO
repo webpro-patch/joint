@@ -1,0 +1,20 @@
+- add zoom capabilities to diagrams, new module Joint.dia.layer, 
+  which can also implement other stuff, e.g. selections, even
+   rotations, ...
+- implement Element>>removeJoints() method which removes all associated
+   joints
+- implement Joint>>remove() method
+- implement Joint>>connect() method to connect joint programmaticaly
+   to an arbitrary object in the paper
+- note that Joint>>connect(), together with pattern:
+ ([aggregate.wrapper].concat(aggregate.inner)).forEach(function(e){
+   e.animate({translation: "-200 -100"}, 3000); })
+  (implement animate method on Elements?) will allow to programmaticaly
+  create animations (videos) of diagram creation!
+   => interesting would be to describe those animations
+   in JSON format together with diagrams, that would open a
+   possibility to have records of diagram transformations stored
+   as a string that can be playable. Another challenge would
+   be to have "record" functionality so that from one moment
+   in time all changes made by user would be stored as either a
+   sequence of diffs or entire snapshots.
