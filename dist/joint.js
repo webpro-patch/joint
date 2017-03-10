@@ -22200,8 +22200,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
         // As a browser global.
 
         var Backbone = root.Backbone;
-        var _ = root._;
+        var _ = root._.noConflict();
         var $ = Backbone.$ = root.jQuery || root.$;
+        $.noConflict(true);
 
         root.joint = factory(root, Backbone, _, $);
         root.g = root.joint.g;
