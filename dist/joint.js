@@ -22173,7 +22173,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
     return jQuery;
         }));
-    
+
     if (typeof define === 'function' && define.amd) {
 
         // For AMD.
@@ -22201,8 +22201,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         var Backbone = root.Backbone;
         var _ = root._.noConflict();
-        var $ = Backbone.$ = root.jQuery || root.$;
-        $.noConflict(true);
+        var $ = Backbone.$ = $.noConflict(true);
 
         root.joint = factory(root, Backbone, _, $);
         root.g = root.joint.g;
@@ -36568,10 +36567,10 @@ joint.shapes.devs.Model = joint.shapes.basic.Generic.extend({
     },
 
     _changeGroup: function(group, properties, opt) {
-        
+
         return this.prop('ports/groups/' + group, _.isObject(properties) ? properties : {}, opt);
     },
-    
+
     changeInGroup: function(properties, opt) {
 
         return this._changeGroup('in', properties, opt);
