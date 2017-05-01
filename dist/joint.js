@@ -22201,7 +22201,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
         var Backbone = root.Backbone;
         var _ = root._.noConflict();
-        var $ = Backbone.$ = $.noConflict(true);
+        var $ = Backbone.$ = root.$.noConflict(true);
 
         root.joint = factory(root, Backbone, _, $);
         root.g = root.joint.g;
