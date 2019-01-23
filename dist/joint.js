@@ -25644,8 +25644,17 @@ joint.layout.DirectedGraph = {
 
     exportElement: function(element) {
 
-        // The width and height of the element.
-        return element.size();
+        var nodeSize = element.size();
+        var node = {
+            // The width of the element.
+            width: nodeSize.width,
+            // The height of the element.
+            height: nodeSize.height,
+            // The port names of the element.
+            ports: _.map(element.getPorts(), "id")
+        };
+
+        return node;
     },
 
     exportLink: function(link) {
@@ -25653,7 +25662,7 @@ joint.layout.DirectedGraph = {
         var labelSize = link.get('labelSize') || {};
         var edge = {
             // The number of ranks to keep between the source and target of the edge.
-            minLen: link.get('minLen') || 1,
+            minlen: link.get('minLen') || 1,
             // The weight to assign edges. Higher weight edges are generally
             // made shorter and straighter than lower weight edges.
             weight: link.get('weight') || 1,
@@ -25666,7 +25675,11 @@ joint.layout.DirectedGraph = {
             // The width of the edge label in pixels.
             width: labelSize.width || 0,
             // The height of the edge label in pixels.
-            height: labelSize.height || 0
+            height: labelSize.height || 0,
+            // The source port of the edge.
+            vport: link.source().port,
+            // The target port of the edge.
+            wport: link.target().port
         };
 
         return edge;
@@ -25864,6 +25877,7 @@ joint.layout.DirectedGraph = {
         var setEdgeLabel = opt.setEdgeLabel || joint.util.noop;
         var setEdgeName = opt.setEdgeName || joint.util.noop;
         var collection = graph.get('cells');
+        collection.models = _.sortBy(collection.models, "id");
 
         for (var i = 0, n = collection.length; i < n; i++) {
 
