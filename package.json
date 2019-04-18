@@ -12,7 +12,7 @@
     "test": "grunt test"
   },
   "version": "2.1.2",
-  "main": "./dist/joint.min.js",
+  "main": "./dist/joint.js",
   "style": "./dist/joint.min.css",
   "types": "./dist/joint.d.ts",
   "homepage": "http://jointjs.com",
